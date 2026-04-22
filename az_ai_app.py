@@ -1,53 +1,90 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 
-# Səhifə Ayarları
-st.set_page_config(page_title="AI SMM Professional", page_icon="🚀")
-st.markdown("<h1 style='text-align: center;'>🇦🇿 AI SMM Professional</h1>", unsafe_allow_html=True)
-st.markdown("---")
+# Səhifənin vizual tənzimləmələri
+st.set_page_config(page_title="AI Məktəbim", page_icon="🎓", layout="centered")
 
-# API Ayarı
-if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    
-    # Aktiv modelləri siyahıdan tapan funksiya
-    @st.cache_resource
-    def find_working_model():
-        try:
-            # Sistemdə olan bütün modelləri siyahıya alırıq
-            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            # Ən yeni 2.5 və ya 2.0 versiyalarını axtarırıq
-            targets = ['models/gemini-2.5-flash', 'models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-pro']
-            for target in targets:
-                if target in available_models:
-                    return target
-            return available_models[0] if available_models else None
-        except:
-            return None
+# Dizaynı gözəlləşdirək
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f5f7f9;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 20px;
+        height: 3em;
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+    }
+    h1 {
+        color: #2E7D32;
+        text-align: center;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    working_model_name = find_working_model()
+st.title("🎓 AI Məktəbim")
+st.markdown("<p style='text-align: center;'>Sənin fərdi süni intellekt müəllimin. İstədiyin mövzunu soruş, sadə dildə öyrən!</p>", unsafe_allow_html=True)
+st.divider()
 
-    if working_model_name:
-        model = genai.GenerativeModel(working_model_name)
+# API Açarını Secrets-dən oxuyuruq
+if "GROQ_API_KEY" in st.secrets:
+    try:
+        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         
-        st.subheader("📋 Məhsul Məlumatları")
-        biznes_adi = st.text_input("Biznesin və ya Mağazanın adı:")
-        mehsul = st.text_area("Nə satırsınız və ya hansı xidməti göstərirsiniz?")
-        
-        if st.button("Tam SMM Paketini Hazırla 🔥"):
-            if biznes_adi and mehsul:
-                with st.spinner(f"Aktiv model ({working_model_name}) ilə hazırlanır..."):
-                    prompt = f"Sən peşəkar SMM-sən. Biznes: {biznes_adi}. Məhsul: {mehsul}. Instagram, Facebook postları və 10 hashtag hazırla. Dil: Azərbaycan."
-                    try:
-                        response = model.generate_content(prompt)
-                        st.success("Paketiniz hazırdır!")
-                        st.markdown(response.text)
-                        st.balloons()
-                    except Exception as e:
-                        st.error(f"Xəta: {e}")
+        # İstifadəçi girişləri
+        col1, col2 = st.columns(2)
+        with col1:
+            subject = st.selectbox("Fənni seç:", 
+                                 ["Riyaziyyat", "Azərbaycan dili", "Tarix", "Coğrafiya", "Biologiya", "Fizika", "İngilis dili"])
+        with col2:
+            level = st.selectbox("Səviyyəni seç:", ["Aşağı sinif", "Orta sinif", "Abituriyent"])
+
+        topic = st.text_input("Mövzunun adını yaz (məsələn: Səfəvilər dövləti və ya Fotosintez):")
+
+        if st.button("Müəllim, İzah Et! 🍎"):
+            if topic:
+                with st.spinner("Müəllim izah hazırlayır, bir neçə saniyə gözlə..."):
+                    
+                    # Süni intellektə "Müəllim" rolu veririk
+                    prompt = f"""
+                    Sən mehriban, səbirli və peşəkar bir Azərbaycanlı müəllimsən. 
+                    Fənn: {subject}
+                    Səviyyə: {level}
+                    Mövzu: {topic}
+                    
+                    Tapşırıq:
+                    1. Mövzunu şagirdin seçdiyi səviyyəyə uyğun olaraq çox sadə və maraqlı dildə izah et. 
+                    2. İzahın içində vacib terminləri qalın (bold) yaz.
+                    3. İzahın sonunda şagirdin biliyini yoxlamaq üçün 3 dənə maraqlı TEST sualı (variantları ilə) hazırl.
+                    4. Sonda şagirdə motivasiya verici bir cümlə yaz.
+                    Dil: Azərbaycan dili.
+                    """
+
+                    # Groq ilə sorğu göndəririk
+                    chat_completion = client.chat.completions.create(
+                        messages=[
+                            {"role": "system", "content": "Sən savadlı bir müəllimsən."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        model="llama-3.3-70b-versatile", # Ən güclü Llama modeli
+                    )
+                    
+                    response_text = chat_completion.choices[0].message.content
+                    
+                    st.markdown("---")
+                    st.success("Dərsimiz hazırdır! 👇")
+                    st.markdown(response_text)
+                    st.balloons()
             else:
-                st.warning("Zəhmət olmasa xanaları doldurun.")
-    else:
-        st.error("Sizin API açarınızla işləyən heç bir model tapılmadı. Yeni açar almağınız məsləhətdir.")
+                st.warning("Zəhmət olmasa mövzu adını daxil et.")
+                
+    except Exception as e:
+        st.error(f"Sistemdə xəta baş verdi: {e}")
 else:
-    st.error("API Key tapılmadı! Settings > Secrets hissəsinə baxın.")
+    st.error("GROQ_API_KEY tapılmadı! Lütfən Streamlit Settings > Secrets hissəsinə açarı əlavə et.")
+
+st.sidebar.markdown("### 📱 Haqqımızda")
+st.sidebar.info("Bu layihə Sahveren tərəfindən təhsilə dəstək məqsədilə hazırlanıb. Süni intellekt köməkliyi ilə dərslər artıq daha maraqlıdır!")
