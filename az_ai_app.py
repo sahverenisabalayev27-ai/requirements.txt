@@ -4,57 +4,53 @@ import google.generativeai as genai
 # --- 1. SƏHİFƏ AYARLARI ---
 st.set_page_config(page_title="AZ AI", page_icon="🇦🇿")
 
-# --- 2. SECRETS YOXLANIŞI ---
-if "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=api_key)
-    
-    # Aktiv modeli avtomatik tapan funksiya
-    @st.cache_resource
-    def get_working_model():
-        try:
-            # Əvvəlcə Flash modelini yoxlayırıq
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            model.generate_content("test") # Test yoxlanışı
-            return 'gemini-1.5-flash'
-        except:
-            try:
-                # Flash yoxdursa Pro modelini yoxlayırıq
-                model = genai.GenerativeModel('gemini-pro')
-                return 'gemini-pro'
-            except:
-                return None
+# --- 2. DİZAYN (Bayraq və Başlıq) ---
+st.markdown("<h1 style='text-align: center;'>🇦🇿 AZ AI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Sahveren tərəfindən Azərbaycan üçün hazırlandı</p>", unsafe_allow_html=True)
+st.markdown("---")
 
-    model_name = get_working_model()
+# --- 3. AĞILLI MODEL SEÇİMİ ---
+def initialize_bot():
+    if "GEMINI_API_KEY" not in st.secrets:
+        st.error("Secrets hissəsində API açarı tapılmadı!")
+        return None
     
-    if model_name:
-        model = genai.GenerativeModel(model_name)
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    
+    # Mövcud modelləri yoxlayırıq
+    try:
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Ən yeni modelləri üstün tuturuq
+        for target in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']:
+            if target in models:
+                return genai.GenerativeModel(target)
+        # Əgər heç biri yoxdursa, siyahıdakı ilk modeli götür
+        return genai.GenerativeModel(models[0]) if models else None
+    except Exception as e:
+        st.error(f"Modellər yüklənərkən xəta: {e}")
+        return None
+
+model = initialize_bot()
+
+# --- 4. SÖHBƏT HİSSƏSİ ---
+if model:
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Sualınızı bura yazın..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
         
-        # --- 3. DİZAYN (Bayraq və Başlıq) ---
-        st.markdown("<h1 style='text-align: center;'>🇦🇿 AZ AZ AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; font-style: italic;'>Sahveren tərəfindən Azərbaycan üçün hazırlandı</p>", unsafe_allow_html=True)
-        st.markdown("---")
-
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-
-        if prompt := st.chat_input("Sualınızı bura yazın..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            with st.chat_message("assistant"):
-                try:
-                    response = model.generate_content(prompt)
-                    st.markdown(response.text)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
-                except Exception as e:
-                    st.error(f"Xəta: {e}")
-    else:
-        st.error("Hesabınızda aktiv model tapılmadı. Lütfən API açarını yeniləyin.")
-else:
-    st.warning("Secrets tapılmadı! Settings > Secrets hissəsinə GEMINI_API_KEY əlavə edin.")
+        with st.chat_message("assistant"):
+            try:
+                # Botun Azərbaycan dilində cavab verməsini təmin edirik
+                response = model.generate_content(f"Cavabı Azərbaycan dilində ver: {prompt}")
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                st.error(f"Cavab alınmadı: {e}")
