@@ -1,56 +1,53 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. SƏHİFƏ AYARLARI ---
-st.set_page_config(page_title="AZ AI", page_icon="🇦🇿")
+# Səhifə Ayarları
+st.set_page_config(page_title="AI SMM Ümumi Paket", page_icon="🚀")
 
-# --- 2. DİZAYN (Bayraq və Başlıq) ---
-st.markdown("<h1 style='text-align: center;'>🇦🇿 AZ AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Sahveren tərəfindən Azərbaycan üçün hazırlandı</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🇦🇿 AI SMM Professional</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Biznesinizi süni intellektlə böyüdün</p>", unsafe_allow_html=True)
 st.markdown("---")
 
-# --- 3. AĞILLI MODEL SEÇİMİ ---
-def initialize_bot():
-    if "GEMINI_API_KEY" not in st.secrets:
-        st.error("Secrets hissəsində API açarı tapılmadı!")
-        return None
-    
+# API Təhlükəsizliyi
+if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-1.5-flash')
+
+    # Sadə Giriş Formu
+    st.subheader("📋 Məhsul Məlumatları")
+    biznes_adi = st.text_input("Biznesin və ya Mağazanın adı:")
+    mehsul = st.text_area("Nə satırsınız və ya hansı xidməti göstərirsiniz?")
     
-    # Mövcud modelləri yoxlayırıq
-    try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # Ən yeni modelləri üstün tuturuq
-        for target in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']:
-            if target in models:
-                return genai.GenerativeModel(target)
-        # Əgər heç biri yoxdursa, siyahıdakı ilk modeli götür
-        return genai.GenerativeModel(models[0]) if models else None
-    except Exception as e:
-        st.error(f"Modellər yüklənərkən xəta: {e}")
-        return None
-
-model = initialize_bot()
-
-# --- 4. SÖHBƏT HİSSƏSİ ---
-if model:
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    if prompt := st.chat_input("Sualınızı bura yazın..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        with st.chat_message("assistant"):
-            try:
-                # Botun Azərbaycan dilində cavab verməsini təmin edirik
-                response = model.generate_content(f"Cavabı Azərbaycan dilində ver: {prompt}")
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                st.error(f"Cavab alınmadı: {e}")
+    if st.button("Tam SMM Paketini Hazırla 🔥"):
+        if biznes_adi and mehsul:
+            with st.spinner("Sizin üçün bütün sosial media planı hazırlanır..."):
+                
+                # Süni intellektə "Ümumi" tapşırıq veririk
+                prompt = f"""
+                Sən peşəkar SMM və Marketinq mütəxəssisisən. 
+                Biznes adı: {biznes_adi}
+                Məhsul/Xidmət: {mehsul}
+                
+                Lütfən aşağıdakıları Azərbaycan dilində, çox cəlbedici və peşəkar şəkildə hazırla:
+                1. Instagram üçün emoji ilə zəngin post mətni və 15 hashtag.
+                2. Facebook üçün daha ətraflı məlumatlandırıcı post.
+                3. Bu məhsulu daha çox satmaq üçün 3 qısa reklam ideyası.
+                4. Story-lərdə paylaşmaq üçün 3 maraqlı fikir.
+                """
+                
+                try:
+                    response = model.generate_content(prompt)
+                    st.success("Paketiniz hazırdır!")
+                    
+                    # Nəticəni gözəl formada göstəririk
+                    st.markdown("### ✨ Hazır SMM Paketiniz")
+                    st.code(response.text, language="markdown") # Rahat kopyalamaq üçün
+                    
+                    st.info("Yuxarıdakı mətni kopyalayıb birbaşa paylaşa bilərsiniz!")
+                    st.balloons()
+                except Exception as e:
+                    st.error(f"Xəta baş verdi: {e}")
+        else:
+            st.warning("Lütfən bütün xanaları doldurun.")
+else:
+    st.error("API Key tapılmadı! Zəhmət olmasa Secrets bölməsini yoxlayın.")
