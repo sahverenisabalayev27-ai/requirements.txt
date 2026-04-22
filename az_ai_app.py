@@ -3,7 +3,7 @@ import google.generativeai as genai
 
 # --- KONFİQURASİYA ---
 # Bura yeni emailinlə aldığın API açarını dırnaq içində yaz
-API_KEY = "SƏNİN_YENİ_API_AÇARIN" 
+API_KEY = "AIzaSyC44lz2MFk9cM5cq_Ma41OCcWCxIk0fL8k" 
 genai.configure(api_key=API_KEY)
 
 # Modeli sazlayırıq
