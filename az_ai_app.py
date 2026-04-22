@@ -1,9 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. KONFİQURASİYA ---
-# Bura öz API açarını dırnaq içində yapışdır
-API_KEY = "BURAYA_OZ_ACARINI_YAZ"
+# --- 1. KONFİQURASİYA (Sənin yeni açarın yerləşdirildi) ---
+API_KEY = "AIzaSyDlnTN0DESssF08610WmfcO0BQo1LonASg"
 genai.configure(api_key=API_KEY)
 
 # Modeli sazlayırıq
@@ -15,6 +14,7 @@ except Exception as e:
 # --- 2. SƏHİFƏ AYARLARI ---
 st.set_page_config(page_title="AZ AI", page_icon="🇦🇿")
 st.title("🇦🇿 AZ AI Süni İntellekt")
+st.caption("Sahveren tərəfindən hazırlandı")
 st.markdown("---")
 
 # Söhbət tarixçəsi
@@ -28,10 +28,12 @@ for message in st.session_state.messages:
 
 # --- 3. SUAL-CAVAB ---
 if prompt := st.chat_input("Sualınızı bura yazın..."):
+    # İstifadəçi sualı
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # AI Cavabı
     with st.chat_message("assistant"):
         try:
             response = model.generate_content(prompt)
