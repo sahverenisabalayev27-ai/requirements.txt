@@ -1,40 +1,42 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. BOTUN BEYNİ VƏ API AYARI ---
-def start_bot():
-    # Sənin verdiyin yeni API açarı
-    API_KEY = "AIzaSyC44lz2MFk9cM5cq_Ma41OCcWCxIk0fL8k"
-    
-    try:
-        genai.configure(api_key=API_KEY)
-        
-        # Ən yaxşı modeli tapırıq
-        model_name = 'gemini-1.5-flash'
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                model_name = m.name
-                break
-        
-        return genai.GenerativeModel(model_name)
-    except Exception as e:
-        st.error(f"Bağlantı xətası: {e}")
-        return None
+# --- 1. KONFİQURASİYA ---
+# Bura öz API açarını dırnaq içində yapışdır
+API_KEY = "BURAYA_OZ_ACARINI_YAZ"
+genai.configure(api_key=API_KEY)
 
-# --- 2. SAYTIN GÖRÜNÜŞÜ (DİZAYN) ---
-st.set_page_config(page_title="AZ AI - Sahveren", page_icon="🇦🇿")
+# Modeli sazlayırıq
+try:
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.error(f"Model yüklənmədi: {e}")
 
+# --- 2. SƏHİFƏ AYARLARI ---
+st.set_page_config(page_title="AZ AI", page_icon="🇦🇿")
 st.title("🇦🇿 AZ AI Süni İntellekt")
-st.caption("Sahveren tərəfindən yaradılmış ilk rəsmi AI saytı")
 st.markdown("---")
 
-# Botu işə salırıq (yaddaşda saxlayırıq ki, hər dəfə yenidən yüklənməsin)
-if "model" not in st.session_state:
-    st.session_state.model = start_bot()
-
-# Söhbət tarixçəsini yaradırıq
+# Söhbət tarixçəsi
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Köhnə mesajları ekranda göstər
-for message in st.session_state.
+# Mesajları göstər
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# --- 3. SUAL-CAVAB ---
+if prompt := st.chat_input("Sualınızı bura yazın..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        try:
+            response = model.generate_content(prompt)
+            ai_message = response.text
+            st.markdown(ai_message)
+            st.session_state.messages.append({"role": "assistant", "content": ai_message})
+        except Exception as e:
+            st.error(f"Xəta baş verdi: {e}")
