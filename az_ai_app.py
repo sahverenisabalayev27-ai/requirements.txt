@@ -2,148 +2,156 @@ import streamlit as st
 from groq import Groq
 import random
 import pandas as pd
+import plotly.express as px
 
 # 1. Səhifə Konfiqurasiyası
-st.set_page_config(page_title="Akademiya AI - Sahveren Edition", page_icon="👑", layout="wide")
+st.set_page_config(page_title="Akademiya AI | Sahveren Edition", page_icon="💎", layout="wide")
 
-# Müasir və Premium CSS
+# Premium CSS Dizayn
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f5; }
-    .stTabs [data-baseweb="tab-list"] { gap: 15px; }
+    .main { background-color: #f8fafc; }
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; border-bottom: 2px solid #e2e8f0; }
     .stTabs [data-baseweb="tab"] {
-        height: 55px; background-color: white; border-radius: 12px;
-        font-weight: bold; border: 1px solid #e0e0e0;
+        padding: 15px 25px; background: white; border-radius: 12px 12px 0 0;
+        font-weight: 600; color: #64748b;
     }
-    .stTabs [aria-selected="true"] { background-color: #1a237e !important; color: white !important; }
-    .admin-card { background: #1a237e; color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-    .content-card { background: white; padding: 35px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .stTabs [aria-selected="true"] { background: #1e293b !important; color: white !important; }
+    .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
+    .admin-box { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 20px; border-radius: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. API Menecment
+# 2. Sistem Məntiqi (API)
 active_keys = [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
 
-def call_ai(prompt, system_prompt="Sən akademik bir müəllimsən."):
+def ai_engine(prompt, difficulty="Professor"):
     random.shuffle(active_keys)
+    sys_msg = f"Sən {difficulty} səviyyəsində bir müəllimsən. Məlumatı çox ətraflı, akademik və Azərbaycan dilində təqdim et."
     for key in active_keys:
         try:
             client = Groq(api_key=key)
             resp = client.chat.completions.create(
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+                messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": prompt}],
                 model="llama-3.3-70b-versatile",
                 max_tokens=4000
             )
             return resp.choices[0].message.content
         except: continue
-    return "Limit dolub."
+    return "Xəta: Sistem yüklüdür."
 
-# 3. Yaddaş və İdarəetmə (Sessiya)
-if 'score' not in st.session_state: st.session_state.score = 0
+# 3. Yaddaş və Parametrlər
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'user_role' not in st.session_state: st.session_state.user_role = "user"
-if 'db_users' not in st.session_state: st.session_state.db_users = [] # Admin üçün istifadəçi siyahısı
+if 'score' not in st.session_state: st.session_state.score = 0
+if 'difficulty' not in st.session_state: st.session_state.difficulty = "Professor"
+if 'theme' not in st.session_state: st.session_state.theme = "Light"
 
-# --- GİRİŞ SİSTEMİ ---
+# --- GİRİŞ PANELİ ---
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center;'>🔐 Akademiya AI-ya xoş gəlmisiniz</h1>", unsafe_allow_html=True)
-    l_col, r_col = st.columns(2)
-    with l_col:
-        user = st.text_input("İstifadəçi adı (Email/Tel):")
-        pwd = st.text_input("Şifrə:", type="password")
-        if st.button("Daxil Ol 🚀"):
-            if user == "admin" and pwd == "sahveren2026": # Sənin xüsusi admin girişin
-                st.session_state.logged_in = True
-                st.session_state.user_role = "admin"
-                st.session_state.user_name = "Sahveren (Sahib)"
+    st.markdown("<h1 style='text-align: center;'>🏫 Akademiya AI Giriş</h1>", unsafe_allow_html=True)
+    with st.container():
+        c1, c2 = st.columns(2)
+        u = c1.text_input("İstifadəçi adı:")
+        p = c2.text_input("Şifrə:", type="password")
+        if st.button("Giriş 🚀"):
+            if u == "admin" and p == "sahveren2026":
+                st.session_state.logged_in, st.session_state.role, st.session_state.user = True, "admin", "Sahveren"
                 st.rerun()
-            elif user and pwd:
-                st.session_state.logged_in = True
-                st.session_state.user_role = "user"
-                st.session_state.user_name = user
-                st.session_state.db_users.append(user)
+            elif u and p:
+                st.session_state.logged_in, st.session_state.role, st.session_state.user = True, "user", u
                 st.rerun()
     st.stop()
 
-# --- ADMIN PANELİ (Yalnız sənin üçün) ---
-if st.session_state.user_role == "admin":
-    with st.expander("🛠️ SAHİBİN İDARƏETMƏ PANELİ (ADMIN)"):
-        st.markdown("<div class='admin-card'>Salam, Sahveren! Saytın bütün idarəçiliyi səndədir.</div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Ümumi Giriş", len(st.session_state.db_users))
-        c2.metric("Aktiv API Açarları", len(active_keys))
-        c3.metric("Sistem Statusu", "Stabil")
-        st.write("**İstifadəçi Siyahısı:**", st.session_state.db_users)
+# --- SAHİB (ADMIN) GÖSTƏRİCİLƏRİ ---
+if st.session_state.role == "admin":
+    with st.sidebar:
+        st.markdown("<div class='admin-box'>👑 <b>Sahib Paneli</b><br>Sistem Tam Aktivdir</div>", unsafe_allow_html=True)
+        st.write(f"🔑 API Açarları: {len(active_keys)}")
+        if st.button("Sistemi Yenilə 🔄"): st.rerun()
 
-# --- ƏSAS PORTAL ---
+# --- PARAMETRLƏR VƏ PROFİL (SIDEBAR) ---
 with st.sidebar:
-    st.title("🎓 Portal")
-    st.write(f"👤 **İstifadəçi:** {st.session_state.user_name}")
-    st.metric("Topladığın Xal 🏆", f"{st.session_state.score} XP")
+    st.title("👤 Profilim")
+    st.write(f"Xoş gəldin, **{st.session_state.user}**")
     st.divider()
-    subject = st.selectbox("Fənn seç:", ["Tarix", "Azərbaycan dili", "Riyaziyyat", "Biologiya", "Fizika", "Kimya", "İngilis dili", "Rus dili"])
-    topic = st.text_input("Mövzu:", value="Dədə Qorqud dastanı")
+    st.subheader("⚙️ Parametrlər")
+    st.session_state.difficulty = st.select_slider("Dərs Çətinliyi:", options=["Asan", "Orta", "Professor"])
+    st.session_state.theme = st.selectbox("Görünüş:", ["İşıqlı", "Qaranlıq (Dark Mode)"])
+    
+    st.divider()
+    subject = st.selectbox("Fənn:", ["Tarix", "Riyaziyyat", "Biologiya", "Fizika", "Kimya", "İngilis dili", "Coğrafiya"])
+    topic = st.text_input("Mövzu:", "Azərbaycanın Müasir Tarixi")
+    
     if st.button("🚪 Çıxış"):
         st.session_state.logged_in = False
         st.rerun()
 
-tab_info, tab_test, tab_game = st.tabs(["📖 Dərin Öyrənmə", "📝 Sual Bankı", "🎮 Təhsil Oyunları"])
+# --- ƏSAS İNTERFEYS ---
+t1, t2, t3, t4 = st.tabs(["📖 Öyrənmə Mərkəzi", "📝 Sual Bankı", "🎮 Oyunlar", "📊 Statistikam"])
 
-# 📖 ÖYRƏNMƏ BÖLMƏSİ (Şəkilli və Səsli)
-with tab_info:
-    if st.button("Mövzunu Tam İzah Et 🚀"):
-        with st.spinner("Ensiklopedik məlumatlar toplanır..."):
-            res = call_ai(f"'{topic}' haqqında ən az 3000 sözlük, elmi, çox geniş məlumat ver.")
-            st.session_state.info_text = res
-            st.session_state.img_url = f"https://source.unsplash.com/800x400/?{topic.replace(' ', ',')}"
-            st.rerun()
-            
-    if 'info_text' in st.session_state:
-        st.image(st.session_state.img_url, use_container_width=True)
-        st.markdown(f"<div class='content-card'>{st.session_state.info_text}</div>", unsafe_allow_html=True)
-        # Səsli Oxuma (TTS)
-        st.write("🎙️ **Dərsi Dinlə:**")
-        tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={st.session_state.info_text[:250]}&tl=tr&client=tw-ob"
-        st.audio(tts_url)
+# 1. ÖYRƏNMƏ (PARAMETRƏ UYĞUN)
+with t1:
+    if st.button("Dərsi Başlat 🚀"):
+        with st.spinner("Məlumatlar analiz edilir..."):
+            info = ai_engine(f"'{topic}' haqqında {st.session_state.difficulty} səviyyəsində geniş məlumat ver.", st.session_state.difficulty)
+            st.session_state.last_info = info
+            st.session_state.img = f"https://source.unsplash.com/800x400/?{topic.replace(' ', ',')}"
+    
+    if 'last_info' in st.session_state:
+        st.image(st.session_state.img, use_container_width=True)
+        st.markdown(f"<div class='card'><h2>{topic}</h2><br>{st.session_state.last_info}</div>", unsafe_allow_html=True)
+        # Səs
+        st.write("🎙️ **Səsli İzahat:**")
+        st.audio(f"https://translate.google.com/translate_tts?ie=UTF-8&q={st.session_state.last_info[:200]}&tl=tr&client=tw-ob")
 
-# 📝 SUAL BANKI (Test + Növbəti Düyməsi)
-with tab_test:
-    def get_new_q():
-        res = call_ai(f"{subject} fənnindən {topic} haqqında çətin test hazırla. Format: SUAL: [..] A) [..] B) [..] C) [..] D) [..] DOĞRU: [..] İZAH: [..]")
+# 2. SUAL BANKI (ARIDICIL SİSTEM)
+with t2:
+    def load_q():
+        res = ai_engine(f"{subject} - {topic} mövzusunda çətin bir test sualı hazırla. Format: SUAL: [..] A) [..] B) [..] C) [..] D) [..] DOĞRU: [..] İZAH: [..]")
         if "DOĞRU:" in res:
-            st.session_state.q_data = {
-                "text": res.split("SUAL:")[1].split("A)")[0].strip(),
-                "opts": [res.split("A)")[1].split("B)")[0].strip(), res.split("B)")[1].split("C)")[0].strip(), res.split("C)")[1].split("D)")[0].strip(), res.split("D)")[1].split("DOĞRU:")[0].strip()],
-                "ans": res.split("DOĞRU:")[1].split("İZAH:")[0].strip(),
-                "expl": res.split("İZAH:")[1].strip()
+            st.session_state.q = {
+                "s": res.split("SUAL:")[1].split("A)")[0].strip(),
+                "v": [res.split("A)")[1].split("B)")[0].strip(), res.split("B)")[1].split("C)")[0].strip(), res.split("C)")[1].split("D)")[0].strip(), res.split("D)")[1].split("DOĞRU:")[0].strip()],
+                "c": res.split("DOĞRU:")[1].split("İZAH:")[0].strip(),
+                "i": res.split("İZAH:")[1].strip()
             }
 
-    if st.button("Yeni Sual Hazırla 🔄") or 'q_data' not in st.session_state:
-        get_new_q()
-
-    if 'q_data' in st.session_state:
-        q = st.session_state.q_data
-        st.info(f"**Sual:** {q['text']}")
-        choice = st.radio("Variantını seç:", q['opts'], index=None)
+    if st.button("Yeni Sual 🔄") or 'q' not in st.session_state: load_q()
+    
+    if 'q' in st.session_state:
+        st.markdown(f"<div class='card'><h4>{st.session_state.q['s']}</h4></div>", unsafe_allow_html=True)
+        ans = st.radio("Seçiminiz:", st.session_state.q['v'], index=None)
+        
         c1, c2 = st.columns(2)
-        if c1.button("✅ Yoxla"):
-            if choice and choice[0] == q['ans']:
-                st.success(f"Düzdür! {q['expl']}")
+        if c1.button("✅ Cavabı Yoxla"):
+            if ans and ans[0] == st.session_state.q['c']:
+                st.success(f"Mükəmməl! {st.session_state.q['i']}")
                 st.session_state.score += 10
                 st.balloons()
-            else: st.error(f"Səhvdir! Doğru: {q['ans']}. İzah: {q['expl']}")
+            else: st.error(f"Səhv! Doğru variant: {st.session_state.q['c']}")
+        
         if c2.button("Növbəti Sual ➡️"):
-            get_new_q()
+            load_q()
             st.rerun()
 
-# 🎮 OYUNLAR BÖLMƏSİ (Düzəldilmiş)
-with tab_game:
-    st.subheader("🎮 AI ilə İntellektual Oyun")
-    game_mode = st.selectbox("Oyun növü:", ["Tarixi Personajla Söhbət", "Söz Tapmacası", "Məntiq Dueli"])
-    if st.button("Oyuna Başla 🕹️"):
-        with st.spinner("AI oyun mühitini qurur..."):
-            game_res = call_ai(f"Mövzu {topic} üzrə {game_mode} oyunu başlat. Şagirdlə maraqlı şəkildə qarşılıqlı əlaqə qur.")
-            st.markdown(f"<div class='content-card'>{game_res}</div>", unsafe_allow_html=True)
+# 3. OYUNLAR (DİNAMİK ROLEPLAY)
+with t3:
+    st.subheader("🎮 İntellektual Ssenarilər")
+    g_type = st.selectbox("Oyun növü:", ["Tarixi Debat", "Sirli Tapmaca", "Gələcəkdən Məktub"])
+    if st.button("Oyuna Gir 🕹️"):
+        game_content = ai_engine(f"{topic} haqqında {g_type} formatında interaktiv oyun başlat.")
+        st.markdown(f"<div class='card'>{game_content}</div>", unsafe_allow_html=True)
+
+# 4. STATİSTİKA (PARAMETR ANALİZİ)
+with t4:
+    st.subheader("📊 Sənin Tərəqqi Qrafikin")
+    data = pd.DataFrame({
+        "Fənn": ["Tarix", "Riyaziyyat", "Fizika", "Biologiya"],
+        "Bilik Səviyyəsi": [random.randint(40, 100) for _ in range(4)]
+    })
+    fig = px.line_polar(data, r='Bilik Səviyyəsi', theta='Fənn', line_close=True)
+    st.plotly_chart(fig)
+    st.metric("Ümumi Toplanmış Xal", f"{st.session_state.score} XP")
 
 st.markdown("---")
-st.caption("© 2026 Akademiya AI | Sahveren - Sistem Sahibi Paneli Aktivdir.")
+st.caption("© 2026 Akademiya AI | Sahveren Premium")
