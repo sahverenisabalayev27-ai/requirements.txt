@@ -5,88 +5,103 @@ import random
 # 1. Səhifə Ayarları
 st.set_page_config(page_title="Akademiya AI", page_icon="🎓", layout="wide")
 
-# CSS Dizaynı
+# CSS - Dizaynı daha da gözəlləşdiririk
 st.markdown("""
     <style>
-    .main { background-color: #f4f7f9; }
-    .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-        height: 3.5em;
+    .main { background-color: #f8f9fa; }
+    div.stButton > button:first-child {
         background-color: #1a237e;
         color: white;
+        border-radius: 10px;
         font-weight: bold;
     }
-    .status-card {
-        padding: 15px;
-        border-radius: 10px;
+    .test-box {
         background-color: white;
-        border-left: 5px solid #1a237e;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. API Açar Sistemi
-def get_keys():
+# 2. API Menecment
+def get_api_keys():
     return [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
 
-active_keys = get_keys()
+active_keys = get_api_keys()
 
-def generate_ai_response(subject, topic, mode):
-    if not active_keys:
-        return "⚠️ Secrets hissəsində API açarı tapılmadı!"
-    
+def call_ai(prompt):
     random.shuffle(active_keys)
-    
-    if mode == "Dərin İzah (Ensiklopediya)":
-        prompt = f"Sən Azərbaycanlı professorsan. {subject} fənnindən '{topic}' mövzusunu ən az 1500 sözlə, çox ətraflı və elmi şəkildə izah et. Dil: Azərbaycan dili."
-    else:
-        prompt = f"Şagird üçün {subject} fənnindən '{topic}' mövzusunda 1 ədəd çətin test sualı hazırla. Düzgün cavabı sonda qeyd et."
-
     for key in active_keys:
         try:
             client = Groq(api_key=key)
-            chat_completion = client.chat.completions.create(
+            resp = client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
                 model="llama-3.3-70b-versatile",
-                max_tokens=4000
+                max_tokens=2000
             )
-            return chat_completion.choices[0].message.content
-        except Exception as e:
-            if "429" in str(e):
-                continue
-            else:
-                return f"❌ Xəta: {str(e)}"
-    return "😴 Bütün açarların limiti dolub, 1 dəqiqə gözləyin."
+            return resp.choices[0].message.content
+        except:
+            continue
+    return "Sistem yüklüdür, az sonra yenidən yoxlayın."
 
 # 3. İnterfeys
-st.markdown("<h1 style='text-align: center;'>🎓 Akademiya AI Portalı</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #1a237e;'>🏫 Akademiya AI Portalı</h1>", unsafe_allow_html=True)
 st.divider()
+
+# Sidebar (Artıq texniki yazılar yoxdur)
+st.sidebar.title("👤 Profilim")
+st.sidebar.info("Xoş gəldiniz! Tezliklə burada xallarınız və nailiyyətləriniz görünəcək.")
 
 col1, col2 = st.columns([1, 2], gap="large")
 
 with col1:
-    st.sidebar.markdown("## ⚙️ Sistem Paneli")
-    st.sidebar.markdown(f"<div class='status-card'>✅ <b>Server:</b> Aktiv<br>🔑 <b>Açar Sayı:</b> {len(active_keys)}</div>", unsafe_allow_html=True)
-    
-    st.markdown("### 🔍 Seçimlər")
-    # BURADA DƏQİQ OLUN: Dırnaqların bağlandığından əmin olun
+    st.subheader("📚 Dərs Paneli")
     subject = st.selectbox("Fənni seçin:", ["Tarix", "Azərbaycan dili", "Riyaziyyat", "Biologiya", "Fizika", "Kimya", "Coğrafiya"])
-    mode = st.radio("İş rejimi:", ["Dərin İzah (Ensiklopediya)", "İmtahan Rejimi (Test)"])
+    mode = st.radio("İş rejimi:", ["Dərin İzah (Ensiklopediya)", "İmtahan (Test)"])
 
 with col2:
-    st.markdown("### ✍️ Mövzu Daxil Et")
-    topic = st.text_input("Mövzu adı:", placeholder="Məsələn: Səfəvilər dövləti")
+    st.subheader("✍️ Mövzu")
+    topic = st.text_input("Mövzu adı daxil edin:", placeholder="Məsələn: Albaniya dövləti")
     
     if st.button("Dərsi Başlat 🚀"):
         if topic:
-            with st.spinner("Məlumatlar hazırlanır..."):
-                response = generate_ai_response(subject, topic, mode)
-                st.markdown(response)
+            if mode == "Dərin İzah (Ensiklopediya)":
+                with st.spinner("Məlumat toplanır..."):
+                    res = call_ai(f"{subject} fənnindən {topic} haqqında çox geniş, akademik məlumat ver.")
+                    st.markdown(res)
+            
+            else: # İmtahan Rejimi
+                with st.spinner("Sual hazırlanır..."):
+                    # Botdan xüsusi formatda sual istəyirik
+                    test_res = call_ai(f"{subject} fənnindən {topic} haqqında 1 ədəd çoxvariantlı test sualı hazırla. Format belə olsun: Sual mətni, sonra A, B, C, D variantları. Sonda 'DOĞRU_CAVAB: X' şəklində qeyd et.")
+                    
+                    # Cavabı ayırmaq üçün məntiq
+                    if "DOĞRU_CAVAB:" in test_res:
+                        parts = test_res.split("DOĞRU_CAVAB:")
+                        question_text = parts[0]
+                        correct_answer = parts[1].strip()
+                        
+                        st.session_state.current_question = question_text
+                        st.session_state.correct_ans = correct_answer
+                    else:
+                        st.write(test_res)
+
+    # Testi göstərmək və seçimi idarə etmək
+    if mode == "İmtahan (Test)" and 'current_question' in st.session_state:
+        st.markdown("---")
+        st.markdown(f"### ❓ Sual:\n{st.session_state.current_question}")
+        
+        user_choice = st.radio("Düzgün variantı seçin:", ["A", "B", "C", "D", "E"])
+        
+        if st.button("Yoxla ✅"):
+            if user_choice == st.session_state.correct_ans:
+                st.success(f"Mükəmməl! Düzgün cavab: {st.session_state.correct_ans}")
                 st.balloons()
-        else:
-            st.warning("Mövzu adını yazın.")
+            else:
+                st.error(f"Təəssüf, səhvdir. Düzgün cavab: {st.session_state.correct_ans}")
+                st.info("Mövzunu yenidən oxumağınız məsləhətdir.")
 
 st.markdown("---")
 st.caption("© 2026 Akademiya AI | Sahveren")
