@@ -102,4 +102,22 @@ with tab2:
 
 # 3. AÇIQ SUAL BÖLMƏSİ (YAZILI)
 with tab3:
-    if st.button("Mənə Açıq Sual Ver ❓
+    if st.button("Mənə Açıq Sual Ver ❓"):
+        with st.spinner("Sual hazırlanır..."):
+            open_q = call_ai(f"{subject} fənnindən {topic} haqqında şagirdin özünün yazmalı olduğu 1 ədəd açıq sual hazırla. Variant olmasın.")
+            st.session_state.open_q = open_q
+    
+    if 'open_q' in st.session_state:
+        st.markdown(f"<div class='q-card'><h3>Sual:</h3>{st.session_state.open_q}</div>", unsafe_allow_html=True)
+        user_answer = st.text_area("Cavabınızı bura yazın:")
+        
+        if st.button("Cavabımı Göndər 📤"):
+            with st.spinner("Müəllim cavabınızı yoxlayır..."):
+                evaluation = call_ai(f"Sual: {st.session_state.open_q}\nŞagirdin cavabı: {user_answer}\nBu cavabı yoxla. Düzdürsə 'DÜZDÜR' yaz və səbəbini izah et, səhvdirsə çatışmazlıqları yaz. Azərbaycan dilində.")
+                st.markdown(f"<div class='ans-box'><b>Müəllim rəyi:</b><br>{evaluation}</div>", unsafe_allow_html=True)
+                if "DÜZDÜR" in evaluation.upper():
+                    st.session_state.score += 20
+                    st.balloons()
+
+st.markdown("---")
+st.caption("© 2026 Akademiya AI | Sahveren")
