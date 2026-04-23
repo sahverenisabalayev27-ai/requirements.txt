@@ -1,201 +1,151 @@
 import streamlit as st
 from groq import Groq
 import random
-import time
+import requests
 
-# 1. Səhifə Ayarları və Vizual Stil
-st.set_page_config(page_title="Akademiya AI - Premium", page_icon="🏫", layout="wide")
+# 1. Səhifə Konfiqurasiyası
+st.set_page_config(page_title="Akademiya AI - Global", page_icon="🌐", layout="wide")
 
+# Müasir Premium Dizayn
 st.markdown("""
     <style>
-    .main { background-color: #f1f3f6; }
+    .main { background-color: #f4f7f6; }
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stTabs [data-baseweb="tab"] {
+        height: 60px; background-color: #ffffff; border-radius: 12px;
+        font-weight: bold; font-size: 16px; border: 1px solid #ddd;
+    }
     .stTabs [aria-selected="true"] { background-color: #1a237e !important; color: white !important; }
-    .stButton>button { border-radius: 10px; height: 3em; font-weight: bold; }
-    .info-card, .game-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .event-image { width: 100%; border-radius: 10px; margin-bottom: 15px; }
+    .content-box { 
+        background: white; padding: 40px; border-radius: 25px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1); line-height: 2; color: #333;
+    }
+    .image-caption { text-align: center; font-style: italic; color: #555; margin-top: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. API Menecment
+# 2. API və Sistem Məntiqi
 active_keys = [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
 
-def call_ai(prompt, tokens=1500):
+def get_ai_response(prompt, length="long"):
     random.shuffle(active_keys)
+    # Professional Müəllim Təlimatı
+    system_instruction = "Sən dünyanın ən savadlı Azərbaycanlı professorusan. Məlumatı ən az 3000 sözlə, dərin akademik detallarla, başlıqlarla və maraqlı faktlarla izah etməlisən."
+    
     for key in active_keys:
         try:
             client = Groq(api_key=key)
             resp = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": prompt}
+                ],
                 model="llama-3.3-70b-versatile",
-                max_tokens=tokens
+                max_tokens=4000 if length == "long" else 1500
             )
             return resp.choices[0].message.content
         except: continue
-    return "Xəta oldu."
+    return "Limit dolub, az sonra yoxlayın."
 
-# --- QEYDİYYAT VƏ GİRİŞ SİSTEMİ ---
+# 3. Giriş Sistemi (Email, Telefon, Google)
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'user_method' not in st.session_state: st.session_state.user_method = ""
+if 'user_name' not in st.session_state: st.session_state.user_name = ""
 if 'score' not in st.session_state: st.session_state.score = 0
-if 'current_test' not in st.session_state: st.session_state.current_test = None
 
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center; color: #1a237e;'>🔐 Akademiya AI - Giriş Portalı</h1>", unsafe_allow_html=True)
-    st.divider()
+    st.markdown("<h1 style='text-align: center;'>🌐 Akademiya AI Giriş</h1>", unsafe_allow_html=True)
+    login_type = st.radio("Giriş üsulu:", ["Email", "Telefon", "Google"], horizontal=True)
     
-    login_method = st.radio("Daxil olma üsulu seçin:", ["📧 Email", "📱 Telefon Nömrəsi", "🌐 Google Hesabı"])
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if login_method == "📧 Email":
-            email = st.text_input("Email ünvanınız:")
-            pwd = st.text_input("Şifrə:", type="password")
-        elif login_method == "📱 Telefon Nömrəsi":
-            phone = st.text_input("Telefon nömrəniz:", placeholder="+994 50 000 00 00")
-            code = st.text_input("SMS Kodu:")
-        elif login_method == "🌐 Google Hesabı":
-            st.markdown("""
-                <div style='background-color: white; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #ddd;'>
-                    <img src='https://cdn1.iconfinder.com/data/icons/google_jfk_icons_by_jfkdg/512/google.png' width='50'><br>
-                    <b>Google ilə birbaşa bağlan</b>
-                </div>
-                """, unsafe_allow_html=True)
-            google_connect = st.button("🔗 Google ilə Giriş")
-
-    with col2:
-        st.write("Giriş etmək üçün məlumatlarınızı doldurun.")
-        if login_method != "🌐 Google Hesabı":
-            if st.button("Daxil Ol 🚀"):
-                # Sadə simulyasiya: Məlumat yazılıbsa girişə icazə ver
-                if (login_method == "📧 Email" and email and pwd) or (login_method == "📱 Telefon Nömrəsi" and phone and code):
-                    st.session_state.logged_in = True
-                    st.session_state.user_method = email if email else phone
-                    st.rerun()
-        else:
-            if 'google_connect' in locals() and google_connect:
+    with st.container():
+        user_id = st.text_input(f"{login_type} daxil edin:")
+        pwd = st.text_input("Şifrə:", type="password")
+        if st.button("Giriş Et 🚀"):
+            if user_id:
                 st.session_state.logged_in = True
-                st.session_state.user_method = "Google User"
+                st.session_state.user_name = user_id
                 st.rerun()
-
-    st.stop() # Giriş etməyibsə aşağıdakı kodu görməsin
+    st.stop()
 
 # --- ƏSAS PORTAL ---
-st.markdown(f"<h1 style='text-align: center; color: #1a237e;'>🎓 Akademiya AI Premium</h1>", unsafe_allow_html=True)
+st.sidebar.title("👤 Profilim")
+st.sidebar.info(f"İstifadəçi: {st.session_state.user_name}")
+st.sidebar.metric("Toplanmış XP 🏆", f"{st.session_state.score} XP")
 
-with st.sidebar:
-    st.title("👤 Profil")
-    st.write(f"**İstifadəçi:** {st.session_state.user_method}")
-    st.metric("Topladığın Xal 🏆", f"{st.session_state.score} XP")
-    st.divider()
-    
-    # 🌍 Dillərin və Fənlərin geniş siyahısı
-    subject_list = [
-        # Təbiət və Dəqiq Elmlər
-        "Riyaziyyat", "Fizika", "Kimya", "Biologiya", "Coğrafiya", "İnformatika",
-        # Humanitar Elmlər
-        "Tarix", "Azərbaycan dili", "Ədəbiyyat", "Həyat bilgisi",
-        # Xarici Dillər
-        "İngilis dili", "Rus dili", "Alman dili", "Fransız dili", "İspan dili", "İtalyan dili", "Ərəb dili", "Türkiyə türkcəsi"
-    ]
-    subject = st.selectbox("Tədris sahəsi:", subject_list)
-    topic = st.text_input("Mövzu:", value="Müstəqillik Günü")
-    
-    if st.button("🚪 Çıxış"):
-        st.session_state.logged_in = False
-        st.rerun()
+subject_list = [
+    "Tarix", "Azərbaycan dili", "Riyaziyyat", "Fizika", "Kimya", "Biologiya", 
+    "Coğrafiya", "İngilis dili", "Rus dili", "Fransız dili", "Alman dili", "İspan dili"
+]
+sel_subject = st.sidebar.selectbox("Fənn seç:", subject_list)
+sel_topic = st.sidebar.text_input("Mövzu:", "Böyük Partlayış və Kainat")
 
-tab1, tab2, tab3, tab4 = st.tabs(["📖 Öyrən & Şəkilli İzah", "📝 Sual Bankı", "🎮 Təhsil Oyunları", "🌐 Xarici Dil"])
+tab_edu, tab_test, tab_game = st.tabs(["📖 Akademik Öyrənmə", "📝 Sual Bankı", "🎮 Təhsil Oyunları"])
 
-# 📖 TAB 1: ÖYRƏN VƏ ŞƏKİLLİ İZAH
-with tab1:
-    col_info, col_img = st.columns([2, 1])
-    
-    with col_info:
-        if st.button("Mövzunu Təsvir Et 📚"):
-            with st.spinner("AI hadisəni canlandırır..."):
-                # AI-dan həm məlumat, həm də şəkil təsviri istəyirik
-                prompt = f"""{subject} fənnindən '{topic}' haqqında akademik məlumat ver. 
-                Sonda isə bu hadisəni canlandıran möhtəşəm bir şəkil təsviri (English prompt) yaz."""
-                result = call_ai(prompt, 3000)
-                
-                if "English prompt:" in result:
-                    st.session_state.explanation = result.split("English prompt:")[0]
-                    st.session_state.img_prompt = result.split("English prompt:")[1]
-                else:
-                    st.session_state.explanation = result
-                    st.session_state.img_prompt = f"Historical scene: {topic}"
-                st.rerun()
-
-        if 'explanation' in st.session_state:
-            st.markdown(f"<div class='info-card'>{st.session_state.explanation}</div>", unsafe_allow_html=True)
-            # Səsli oxuma funksiyası (Sadə placeholder)
-            st.audio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3")
-
-    with col_img:
-        st.write("🖼️ **Hadisənin Canlandırılması:**")
-        # Real şəkil generatoru yoxdursa, mövzuya uyğun təsadüfi şəkil simulyasiyası
-        if 'topic' in st.session_state and st.session_state.topic != topic:
-             st.session_state.explanation = "" # Movzu deyişibse kohne izahi sil
-             st.session_state.img_prompt = ""
+# 📖 TAB 1: AKADEMİK ÖYRƏNMƏ (MÖHTƏŞƏM İZAH + REAL ŞƏKİL)
+with tab_edu:
+    if st.button("Külliyyatı Yüklə (Məlumat + Şəkil) 🚀"):
+        with st.spinner("Professor mövzunu araşdırır..."):
+            # Məlumat
+            content = get_ai_response(f"Mövzu: {sel_subject} - {sel_topic}. Bu mövzunu ən az 3000 sözlə, inanılmaz geniş və maraqlı izah et.")
+            st.session_state.last_content = content
+            
+            # Şəkil (Mövzuya uyğun şəkili Unsplash vasitəsilə çəkirik)
+            img_query = sel_topic.replace(" ", "+")
+            st.session_state.last_img = f"https://source.unsplash.com/1600x900/?{img_query},science,history"
+            
+    if 'last_content' in st.session_state:
+        col_main, col_side = st.columns([2, 1])
         
-        # Pulsuz şəkil simulyasiyası üçün LoremFlickr istifadə edirik
-        img_url = f"https://loremflickr.com/640/480/{topic.replace(' ', ',')}"
-        st.image(img_url, caption=f"AI-nin təsəvvüründə: {topic}", use_container_width=True)
-        if 'img_prompt' in st.session_state and st.session_state.img_prompt:
-             st.caption(f"**Təsvir Promptu:** {st.session_state.img_prompt}")
+        with col_main:
+            st.markdown(f"<div class='content-box'><h1>{sel_topic}</h1><br>{st.session_state.last_content}</div>", unsafe_allow_html=True)
+        
+        with col_side:
+            st.image(st.session_state.last_img, use_container_width=True)
+            st.markdown("<p class='image-caption'>Mövzuya uyğun süni intellekt tərəfindən seçilmiş vizual təsvir</p>", unsafe_allow_html=True)
+            
+            # Səsli Oxuma (Professional Səs Simulyasiyası)
+            st.write("🎙️ **Müəllim Səsi (Oğlan):**")
+            audio_text = st.session_state.last_content[:300] # İlk 300 simvolu səsləndiririk
+            # TTS API (Google) istifadə edirik
+            tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={audio_text}&tl=tr&client=tw-ob"
+            st.audio(tts_url)
 
-# 📝 TAB 2: SONSUZ SUAL
-with tab2:
-    def load_new_test():
-        res = call_ai(f"{subject} fənnindən {topic} haqqında bir test hazırla. Format: SUAL: [..] A) [..] B) [..] C) [..] D) [..] DOĞRU: [Hərf] İZAH: [..]")
-        if "DOĞRU:" in res:
-            try:
-                st.session_state.current_test = {
-                    "q": res.split("SUAL:")[1].split("A)")[0].strip(),
-                    "opts": [res.split("A)")[1].split("B)")[0].strip(), res.split("B)")[1].split("C)")[0].strip(), res.split("C)")[1].split("D)")[0].strip(), res.split("D)")[1].split("DOĞRU:")[0].strip()],
-                    "ans": res.split("DOĞRU:")[1].split("İZAH:")[0].strip(),
-                    "expl": res.split("İZAH:")[1].strip()
-                }
-            except: pass
-
-    col_test, col_next = st.columns([3, 1])
-    
-    with col_test:
-        if st.button("Yeni Sual 🔄"):
-            load_new_test()
-            st.rerun()
-
-        if st.session_state.current_test:
-            t = st.session_state.current_test
-            st.info(f"**Sual:** {t['q']}")
-            choice = st.radio("Variant seç:", ["A", "B", "C", "D"], key="test_radio")
-            if st.button("✅ Yoxla"):
-                if choice == t['ans']:
-                    st.success(f"Düzdür! {t['expl']}")
+# 📝 TAB 2: SUAL BANKI (TEST VƏ AÇIQ SUAL)
+with tab_test:
+    st.subheader("📝 Növbəti Səviyyə Sınaqlar")
+    if st.button("Yeni Sual Gətir 🔄"):
+        type_q = random.choice(["test", "aciq"])
+        if type_q == "test":
+            res = get_ai_response(f"{sel_subject} - {sel_topic} haqqında çətin test hazırla. Format: SUAL: [..] A) [..] B) [..] C) [..] D) [..] DOĞRU: [..] İZAH: [..]", "short")
+            st.session_state.current_q = {"type": "test", "data": res}
+        else:
+            res = get_ai_response(f"{sel_subject} - {sel_topic} haqqında yazılı cavab tələb edən açıq sual ver.", "short")
+            st.session_state.current_q = {"type": "aciq", "data": res}
+            
+    if 'current_q' in st.session_state:
+        q = st.session_state.current_q
+        st.markdown(f"<div class='content-box'>{q['data']}</div>", unsafe_allow_html=True)
+        
+        if q['type'] == "test":
+            ans = st.radio("Variant seç:", ["A", "B", "C", "D"])
+            if st.button("Yoxla ✅"):
+                if ans in q['data']: 
+                    st.success("Düzgün! +10 XP")
                     st.session_state.score += 10
                     st.balloons()
-                else:
-                    st.error(f"Səhvdir! Doğru cavab: {t['ans']}. İzah: {t['expl']}")
+        else:
+            user_text = st.text_area("Cavabınızı bura yazın:")
+            if st.button("Müəllimə Göndər 📤"):
+                eval_res = get_ai_response(f"Sual: {q['data']}\nŞagirdin cavabı: {user_text}\nBunu yoxla və rəy ver.")
+                st.info(eval_res)
+                st.session_state.score += 20
 
-# 🎮 TAB 3: TƏHSİL OYUNLARI
-with tab3:
-    st.subheader("🎲 AI ilə Təhsil Oyunları")
-    game_type = st.radio("Oyun növü seçin:", ["🔍 Söz Tapmaca", "📜 Tarix Viktorinası", "🧠 Məntiq Yarışı"])
-    
-    if st.button("Oyunu Başlat 🕹️"):
-        with st.spinner("AI oyun qurur..."):
-            game_prompt = call_ai(f"{subject} fənnindən {topic} mövzusunda şagird üçün {game_type} oyunu hazırla.")
-            st.markdown(f"<div class='game-card'>{game_prompt}</div>", unsafe_allow_html=True)
-
-# 🌐 TAB 4: XARİCİ DİL (MÜƏLLİM)
-with tab3:
-    st.subheader("🇬🇧 AI Xarici Dil Müəllimi")
-    lang_topic = st.text_input("Öyrənmək istədiyiniz mövzu (məs: At Home):", value="Travel")
-    if st.button("Dərsə Başla 🎧"):
-        with st.spinner(f"AI {subject} müəllimi dərsi hazırlayır..."):
-            lesson = call_ai(f"Mən {subject} öyrənmək istəyirəm. Mövzu: {lang_topic}. Mənə ən vacib sözləri, nümunə cümlələri və bir qısa dialoq yaz. Həm original, həm də Azərbaycan dilində izah et.")
-            st.markdown(lesson)
+# 🎮 TAB 3: OYUNLAR (AI ROLEPLAY)
+with tab_game:
+    st.subheader("🎮 Tarixi Şəxsiyyətlərlə Söhbət")
+    person = st.text_input("Kiminlə danışmaq istəyirsən? (məs: Şah İsmayıl, Albert Einstein):")
+    if st.button("Oyuna Başla 🎭"):
+        chat = get_ai_response(f"Sən {person} rolundasan. Şagirdlə onun dövrü haqqında maraqlı danış və bir sirr ver.")
+        st.write(chat)
 
 st.markdown("---")
-st.caption("© 2026 Akademiya AI | Sahveren Premium")
+st.caption("© 2026 Akademiya AI | Premium Təhsil Layihəsi")
