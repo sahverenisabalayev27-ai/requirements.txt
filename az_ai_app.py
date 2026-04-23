@@ -3,33 +3,19 @@ from groq import Groq
 import random
 
 # 1. Səhifə Ayarları
-st.set_page_config(page_title="Akademiya AI", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Akademiya AI - Sonsuz Sual Bankı", page_icon="🎓", layout="wide")
 
-# CSS - Dizaynı daha da gözəlləşdiririk
+# CSS - Daha peşəkar görünüş
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
-    div.stButton > button:first-child {
-        background-color: #1a237e;
-        color: white;
-        border-radius: 10px;
-        font-weight: bold;
-    }
-    .test-box {
-        background-color: white;
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #e0e0e0;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
-    }
+    .stButton>button { width: 100%; border-radius: 8px; font-weight: bold; }
+    .question-box { background: white; padding: 25px; border-radius: 15px; border: 2px solid #1a237e; margin-top: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
 # 2. API Menecment
-def get_api_keys():
-    return [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
-
-active_keys = get_api_keys()
+active_keys = [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
 
 def call_ai(prompt):
     random.shuffle(active_keys)
@@ -39,69 +25,69 @@ def call_ai(prompt):
             resp = client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
                 model="llama-3.3-70b-versatile",
-                max_tokens=2000
+                max_tokens=1000
             )
             return resp.choices[0].message.content
         except:
             continue
-    return "Sistem yüklüdür, az sonra yenidən yoxlayın."
+    return None
 
 # 3. İnterfeys
-st.markdown("<h1 style='text-align: center; color: #1a237e;'>🏫 Akademiya AI Portalı</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #1a237e;'>🏫 Sonsuz Sual Bankı AI</h1>", unsafe_allow_html=True)
 st.divider()
 
-# Sidebar (Artıq texniki yazılar yoxdur)
 st.sidebar.title("👤 Profilim")
-st.sidebar.info("Xoş gəldiniz! Tezliklə burada xallarınız və nailiyyətləriniz görünəcək.")
+st.sidebar.metric("Düzgün Cavablar 🏆", st.session_state.get('correct_count', 0))
+st.sidebar.info("Hər mövzu üzrə minlərlə fərqli sual sistemi aktivdir.")
 
 col1, col2 = st.columns([1, 2], gap="large")
 
 with col1:
-    st.subheader("📚 Dərs Paneli")
+    st.subheader("📚 Mövzu Seç")
     subject = st.selectbox("Fənni seçin:", ["Tarix", "Azərbaycan dili", "Riyaziyyat", "Biologiya", "Fizika", "Kimya", "Coğrafiya"])
-    mode = st.radio("İş rejimi:", ["Dərin İzah (Ensiklopediya)", "İmtahan (Test)"])
+    topic = st.text_input("Mövzunu daxil edin:", placeholder="Məsələn: Səfəvilər")
+    
+    if st.button("Yeni Sual Hazırla 🔄"):
+        if topic:
+            with st.spinner("Yeni sual hazırlanır..."):
+                # Botdan fərqli sual istəyirik
+                prompt = f"""
+                {subject} fənnindən {topic} mövzusunda təsadüfi bir test sualı hazırla. 
+                Əvvəlki suallardan fərqli olsun. 
+                Format: 
+                Sual mətni
+                A) variant
+                B) variant
+                C) variant
+                D) variant
+                E) variant
+                DOĞRU_CAVAB: X
+                """
+                res = call_ai(prompt)
+                if res and "DOĞRU_CAVAB:" in res:
+                    parts = res.split("DOĞRU_CAVAB:")
+                    st.session_state.q_text = parts[0]
+                    st.session_state.c_ans = parts[1].strip()
+                    st.session_state.answered = False # Cavab verilməyib rejimine kec
+        else:
+            st.warning("Mövzu daxil edin.")
 
 with col2:
-    st.subheader("✍️ Mövzu")
-    topic = st.text_input("Mövzu adı daxil edin:", placeholder="Məsələn: Albaniya dövləti")
-    
-    if st.button("Dərsi Başlat 🚀"):
-        if topic:
-            if mode == "Dərin İzah (Ensiklopediya)":
-                with st.spinner("Məlumat toplanır..."):
-                    res = call_ai(f"{subject} fənnindən {topic} haqqında çox geniş, akademik məlumat ver.")
-                    st.markdown(res)
-            
-            else: # İmtahan Rejimi
-                with st.spinner("Sual hazırlanır..."):
-                    # Botdan xüsusi formatda sual istəyirik
-                    test_res = call_ai(f"{subject} fənnindən {topic} haqqında 1 ədəd çoxvariantlı test sualı hazırla. Format belə olsun: Sual mətni, sonra A, B, C, D variantları. Sonda 'DOĞRU_CAVAB: X' şəklində qeyd et.")
-                    
-                    # Cavabı ayırmaq üçün məntiq
-                    if "DOĞRU_CAVAB:" in test_res:
-                        parts = test_res.split("DOĞRU_CAVAB:")
-                        question_text = parts[0]
-                        correct_answer = parts[1].strip()
-                        
-                        st.session_state.current_question = question_text
-                        st.session_state.correct_ans = correct_answer
-                    else:
-                        st.write(test_res)
-
-    # Testi göstərmək və seçimi idarə etmək
-    if mode == "İmtahan (Test)" and 'current_question' in st.session_state:
-        st.markdown("---")
-        st.markdown(f"### ❓ Sual:\n{st.session_state.current_question}")
+    if 'q_text' in st.session_state:
+        st.markdown(f"<div class='question-box'><h3>Sual:</h3>{st.session_state.q_text}</div>", unsafe_allow_html=True)
         
-        user_choice = st.radio("Düzgün variantı seçin:", ["A", "B", "C", "D", "E"])
+        user_choice = st.radio("Variantı seçin:", ["A", "B", "C", "D", "E"], key="user_radio")
         
         if st.button("Yoxla ✅"):
-            if user_choice == st.session_state.correct_ans:
-                st.success(f"Mükəmməl! Düzgün cavab: {st.session_state.correct_ans}")
+            st.session_state.answered = True
+            if user_choice == st.session_state.c_ans:
+                st.success(f"Düzdür! Cavab: {st.session_state.c_ans}")
+                st.session_state.correct_count = st.session_state.get('correct_count', 0) + 1
                 st.balloons()
             else:
-                st.error(f"Təəssüf, səhvdir. Düzgün cavab: {st.session_state.correct_ans}")
-                st.info("Mövzunu yenidən oxumağınız məsləhətdir.")
+                st.error(f"Səhvdir. Düzgün cavab: {st.session_state.c_ans}")
+    else:
+        st.info("Sol tərəfdən mövzu seçib 'Yeni Sual Hazırla' düyməsinə basaraq imtahana başlayın.")
 
 st.markdown("---")
-st.caption("© 2026 Akademiya AI | Sahveren")
+st.caption("© 2026 Akademiya AI | Sonsuz Öyrənmə Sistemi")
