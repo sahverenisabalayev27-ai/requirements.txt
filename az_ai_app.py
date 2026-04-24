@@ -1,174 +1,150 @@
 import streamlit as st
 from groq import Groq
 import random
-import pandas as pd
+import time
 
-# 1. Professional Konfiqurasiya
-st.set_page_config(
-    page_title="AZ AI | Professional Workspace", 
-    page_icon="🧠", 
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# 1. Səhifə Konfiqurasiyası
+st.set_page_config(page_title="AZ AI - Giriş", page_icon="🌐", layout="tight")
 
-# Modern UI Dizayn (Mənim sistemimə bənzər)
+# Professional Google Style CSS
 st.markdown("""
     <style>
-    .stApp { background-color: #0e1113; color: #e1e1e1; }
-    .login-card {
-        background: #1c1f23;
+    /* Ümumi fon */
+    .stApp { background-color: white !important; color: #202124 !important; }
+    
+    /* Giriş Kartı */
+    .login-container {
+        max-width: 450px;
+        margin: auto;
         padding: 40px;
-        border-radius: 20px;
-        border: 1px solid #30363d;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        text-align: center;
-    }
-    .stTextInput>div>div>input {
-        background-color: #0d1117 !important;
-        color: white !important;
-        border: 1px solid #30363d !important;
-        border-radius: 8px !important;
-    }
-    .user-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(45deg, #1f6feb, #238636);
-        margin: 0 auto 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 30px;
-        font-weight: bold;
-    }
-    .stButton>button {
-        width: 100%;
+        border: 1px solid #dadce0;
         border-radius: 8px;
-        height: 45px;
-        background: #238636 !important;
-        border: none !important;
+        text-align: center;
+        font-family: 'Google Sans',arial,sans-serif;
+    }
+    
+    /* Google Logosu */
+    .google-logo {
+        font-size: 24px;
         font-weight: bold;
+        margin-bottom: 10px;
     }
-    .sidebar-user {
-        padding: 15px;
-        background: #161b22;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        border: 1px solid #30363d;
+    .g-blue { color: #4285F4; } .g-red { color: #EA4335; } 
+    .g-yellow { color: #FBBC05; } .g-green { color: #34A853; }
+
+    /* Giriş Düymələri */
+    .stButton>button {
+        border-radius: 4px !important;
+        height: 40px !important;
+        font-weight: 500 !important;
+        text-transform: none !important;
     }
+    .google-btn > button {
+        background-color: white !important;
+        color: #3c4043 !important;
+        border: 1px solid #dadce0 !important;
+    }
+    .next-btn > button {
+        background-color: #1a73e8 !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    /* Sidebar rəngi */
+    [data-testid="stSidebar"] { background-color: #f8f9fa !important; border-right: 1px solid #dee2e6; }
+    [data-testid="stSidebar"] * { color: #3c4043 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. AI Beyni (Groq Cloud)
-def get_ai_response(prompt):
-    active_keys = [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
-    if not active_keys: return "Sistem Sahibi: API Key-ləri əlavə edin!"
-    try:
-        client = Groq(api_key=random.choice(active_keys))
-        resp = client.chat.completions.create(
-            messages=[{"role": "system", "content": "Sən AZ AI-san. Sahveren tərəfindən yaradılmış dahi assistentsən."},
-                      {"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile"
-        )
-        return resp.choices[0].message.content
-    except: return "Sistem hazırda yüklüdür."
+# 2. Sessiya İdarəetməsi
+if 'auth' not in st.session_state: st.session_state.auth = False
+if 'user' not in st.session_state: st.session_state.user = None
+if 'role' not in st.session_state: st.session_state.role = None
 
-# 3. Professional Giriş Məntiqi (Session State)
-if 'auth_status' not in st.session_state: st.session_state.auth_status = False
-if 'user_name' not in st.session_state: st.session_state.user_name = ""
-if 'user_role' not in st.session_state: st.session_state.user_role = "guest"
-
-def login_user(username, password):
-    if username == "admin" and password == "sahveren2026":
-        st.session_state.auth_status = True
-        st.session_state.user_name = "Sahveren"
-        st.session_state.user_role = "admin"
-        return True
-    elif username and password: # Digər hər kəs üçün sadə giriş
-        st.session_state.auth_status = True
-        st.session_state.user_name = username
-        st.session_state.user_role = "user"
-        return True
-    return False
-
-# --- EKRAN 1: GİRİŞ PƏNCƏRƏSİ ---
-if not st.session_state.auth_status:
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+# --- GİRİŞ EKRANI (GOOGLE STYLE) ---
+if not st.session_state.auth:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Mərkəzi Giriş Qutusu
+    with st.container():
         st.markdown("""
-            <div class='login-card'>
-                <div class='user-avatar'>AZ</div>
-                <h2 style='margin-bottom:5px;'>Xoş gəlmisiniz</h2>
-                <p style='color: #8b949e;'>AZ AI hesabınızla davam edin</p>
+            <div class="login-container">
+                <div class="google-logo">
+                    <span class="g-blue">A</span><span class="g-red">Z</span>
+                    <span class="g-yellow">A</span><span class="g-green">I</span>
+                </div>
+                <h2 style="font-size: 24px; margin-bottom: 8px; color: #202124;">Daxil olun</h2>
+                <p style="font-size: 16px; margin-bottom: 24px; color: #202124;">AZ AI hesabınızla davam edin</p>
             </div>
         """, unsafe_allow_html=True)
         
-        user_input = st.text_input("İstifadəçi adı və ya Email", placeholder="Məs: admin")
-        pass_input = st.text_input("Şifrə", type="password", placeholder="••••••••")
-        
-        if st.button("Daxil ol"):
-            if login_user(user_input, pass_input):
-                st.success("Giriş uğurludur! Yönləndirilir...")
-                time_sleep = 1
+        # Email və Şifrə sahələri
+        col_l, col_m, col_r = st.columns([1, 2, 1])
+        with col_m:
+            email = st.text_input("E-poçt və ya telefon", placeholder="Məs: admin@azai.az")
+            password = st.text_input("Şifrənizi daxil edin", type="password")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Google Düyməsi Simulyasiyası
+            st.markdown("<div class='google-btn'>", unsafe_allow_html=True)
+            if st.button("🔴 🟡 🔵 Google ilə daxil olun"):
+                st.info("Google hesabı ilə əlaqə qurulur...")
+                time.sleep(1)
+                st.session_state.auth = True
+                st.session_state.user = "Google İstifadəçisi"
+                st.session_state.role = "user"
                 st.rerun()
-            else:
-                st.error("İstifadəçi adı və ya şifrə yanlışdır.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            # Növbəti Düyməsi (Real Giriş)
+            st.markdown("<div class='next-btn'>", unsafe_allow_html=True)
+            if st.button("Növbəti"):
+                if email == "admin" and password == "sahveren2026":
+                    st.session_state.auth = True
+                    st.session_state.user = "Sahveren"
+                    st.session_state.role = "admin"
+                    st.rerun()
+                elif email and password:
+                    st.session_state.auth = True
+                    st.session_state.user = email.split("@")[0]
+                    st.session_state.role = "user"
+                    st.rerun()
+                else:
+                    st.error("Məlumatları daxil edin")
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("<p style='text-align:left; color:#1a73e8; font-size:14px; font-weight:500; cursor:pointer;'>Hesab yaradın</p>", unsafe_allow_html=True)
     st.stop()
 
-# --- EKRAN 2: ƏSAS İŞ SAHƏSİ (Sidebarsız görünməz) ---
+# --- SİSTEMİN DAXİLİ (Daxil olduqdan sonra) ---
 with st.sidebar:
-    # Profil hissəsi (Eynilə məndə olduğu kimi)
-    st.markdown(f"""
-        <div class='sidebar-user'>
-            <small style='color: #8b949e;'>Aktiv Profil</small><br>
-            <b>{st.session_state.user_name}</b> 
-            <br><small>{'👑 Sultan' if st.session_state.user_role == 'admin' else '🎓 Tələbə'}</small>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"### 👤 {st.session_state.user}")
+    st.write(f"Status: **{st.session_state.role.upper()}**")
+    st.divider()
+    menu = st.radio("Menyu", ["🌐 Ana Səhifə", "📚 Dərslər", "⚙️ Ayarlar"])
     
-    menu = st.radio("Naviqasiya", ["🏠 Ana Səhifə", "📚 Dərslər", "🎮 Yarışmalar", "⚙️ Ayarlar"])
-    
-    st.spacer = st.markdown("<br>"*10, unsafe_allow_html=True)
-    if st.button("🚪 Sistemdən çıx"):
-        st.session_state.auth_status = False
+    if st.button("Çıxış et"):
+        st.session_state.auth = False
         st.rerun()
 
-# --- BÖLMƏLƏR ---
-if menu == "🏠 Ana Səhifə":
-    st.title(f"Salam, {st.session_state.user_name}! 👋")
-    st.write("Bu gün nə öyrənmək istəyirsən? AZ AI sənin üçün hazırdır.")
-    
-    # Tez-tez verilən suallar (Mənim ana səhifəm kimi)
-    cols = st.columns(3)
-    with cols[0]:
-        if st.button("🌍 Coğrafiya testi et"): pass
-    with cols[1]:
-        if st.button("📜 Tarixi araşdır"): pass
-    with cols[2]:
-        if st.button("💡 Məntiq sualı ver"): pass
+# --- ƏSAS KONTENT ---
+if menu == "🌐 Ana Səhifə":
+    st.title(f"Xoş gəldin, {st.session_state.user}!")
+    st.markdown("<div style='background-color:#f1f3f4; padding:20px; border-radius:10px; color:black;'>Gündəlik təhsil planın hazırdır. Başlamaq üçün dərslər bölməsinə keç.</div>", unsafe_allow_html=True)
 
 elif menu == "📚 Dərslər":
-    st.title("📖 Tədris Mərkəzi")
-    topic = st.chat_input("Mövzu daxil edin...")
-    if topic:
-        with st.chat_message("assistant"):
-            response = get_ai_response(f"{topic} haqqında ətraflı məlumat ver.")
-            st.markdown(response)
+    st.title("📖 AZ AI Təlimat")
+    q = st.chat_input("Sualınızı buraya yazın...")
+    if q:
+        st.write(f"**Sən:** {q}")
+        st.write("**AZ AI:** Bu mövzu üzərində işləyirəm...")
 
 elif menu == "⚙️ Ayarlar":
-    st.title("⚙️ Sistem Ayarları")
-    # Sənin istədiyin Sultan bölməsi
-    if st.session_state.user_role == "admin":
-        st.info("👑 Sən hazırda Sultan statusundasan.")
-        tab1, tab2 = st.tabs(["Statistika", "Maliyyə"])
-        with tab1:
-            st.write("Aktiv İzləyicilər: **1,450**")
-        with tab2:
-            st.write("Cari ayın qazancı: **520 AZN**")
+    st.title("⚙️ Parametrlər")
+    if st.session_state.role == "admin":
+        st.success("👑 Sultan Paneli Aktivdir")
+        st.write("Aylıq Qazanc: **500 AZN**")
+        st.write("İzləyici: **1200**")
     else:
-        st.write("Profil ayarları və dil seçimləri tezliklə əlavə olunacaq.")
-
-elif menu == "🎮 Yarışmalar":
-    st.title("🎮 Online Yarışma")
-    st.warning("Tezliklə: Digər tələbələrlə canlı yarış!")
+        st.write("Profil tənzimləmələri tezliklə aktiv olacaq.")
