@@ -2,145 +2,172 @@ import streamlit as st
 from groq import Groq
 import random
 import pandas as pd
-import plotly.express as px
-from datetime import datetime
+import time
 
-# 1. AZ AI - Vizual Brendinq və Konfiqurasiya
-st.set_page_config(page_title="AZ AI | Gələcəyin Təhsili", page_icon="🇦🇿", layout="wide")
+# 1. AZ AI - Brendinq və Üslub
+st.set_page_config(page_title="AZ AI - Mega Portal", page_icon="🇦🇿", layout="wide")
 
-# Müasir "Sahveren" Dizaynı
 st.markdown("""
     <style>
-    .stApp { background-color: #0b0e14; color: #e2e8f0; }
-    .sidebar .sidebar-content { background-image: linear-gradient(#1e293b, #0f172a); }
-    .main-card { background: #1a1f2e; padding: 30px; border-radius: 25px; border: 1px solid #2d3748; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    .admin-only { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); padding: 20px; border-radius: 15px; border: 1px solid #3b82f6; }
+    .stApp { background-color: #05070a; color: #ffffff; }
+    .stSidebar { background-color: #0f172a !important; border-right: 1px solid #1e293b; }
+    .card { background: #111827; padding: 25px; border-radius: 20px; border: 1px solid #374151; margin-bottom: 15px; }
     .stButton>button { 
-        background: linear-gradient(90deg, #2563eb, #7c3aed); color: white; border: none; 
-        border-radius: 10px; font-weight: bold; transition: 0.3s;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; 
+        border-radius: 12px; font-weight: 600; border: none; padding: 10px 20px;
     }
-    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 0 15px #3b82f6; }
-    .game-box { background: #1e1b4b; border: 2px solid #4338ca; padding: 20px; border-radius: 20px; }
+    .flag-img { border-radius: 10px; border: 2px solid #374151; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .admin-status { color: #10b981; font-weight: bold; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. AZ AI Mərkəzi Prosessor (AI Engine)
+# 2. AI Konfiqurasiyası
 active_keys = [st.secrets[k] for k in st.secrets if "GROQ_API_KEY" in k]
 
-def az_ai_brain(prompt, sys_msg="Sən AZ AI-san, Sahveren tərəfindən yaradılmış dahi Azərbaycanlı müəllimsən."):
-    if not active_keys: return "Sistem Sahibi: API açarlarını yoxlayın!"
+def get_az_ai(prompt, difficulty="Professor"):
+    if not active_keys: return "API Xətası."
     random.shuffle(active_keys)
     for key in active_keys:
         try:
             client = Groq(api_key=key)
             resp = client.chat.completions.create(
-                messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": prompt}],
+                messages=[{"role": "system", "content": f"Sən AZ AI-san. {difficulty} səviyyəsində, mükəmməl izahlar verən müəllimsən."},
+                          {"role": "user", "content": prompt}],
                 model="llama-3.3-70b-versatile",
                 max_tokens=4000
             )
             return resp.choices[0].message.content
         except: continue
-    return "Bağlantı kəsildi. AZ AI hazırda istirahət edir."
+    return "Bağlantı kəsildi."
 
-# 3. Giriş və Sessiya
+# 3. Yaddaş və Giriş Sistemi
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'xp' not in st.session_state: st.session_state.xp = 0
+if 'score' not in st.session_state: st.session_state.score = 0
+if 'current_test' not in st.session_state: st.session_state.current_test = None
 
-# --- GİRİŞ EKRANI ---
+# --- LOGİN SİSTEMİ ---
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center; color: #3b82f6;'>🇦🇿 AZ AI - Təhsil Portalı</h1>", unsafe_allow_html=True)
-    with st.container():
-        col_a, col_b, col_c = st.columns([1, 2, 1])
-        with col_b:
-            st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-            u = st.text_input("İstifadəçi ID:")
-            p = st.text_input("Şifrə:", type="password")
-            if st.button("Sistemə Giriş 🚀"):
-                if u == "admin" and p == "sahveren2026":
-                    st.session_state.logged_in, st.session_state.role, st.session_state.user = True, "admin", "Sahveren"
-                    st.rerun()
-                elif u and p:
-                    st.session_state.logged_in, st.session_state.role, st.session_state.user = True, "user", u
-                    st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>🇦🇿 AZ AI PORTAL</h1>", unsafe_allow_html=True)
+    col_l, col_r = st.columns(2)
+    with col_l:
+        u = st.text_input("Giriş ID (və ya Email):")
+        p = st.text_input("Şifrə:", type="password")
+        if st.button("Daxil Ol ✨"):
+            if u == "admin" and p == "sahveren2026":
+                st.session_state.logged_in, st.session_state.role, st.session_state.user = True, "admin", "Sahveren"
+                st.rerun()
+            elif u and p:
+                st.session_state.logged_in, st.session_state.role, st.session_state.user = True, "user", u
+                st.rerun()
     st.stop()
 
-# --- SIDEBAR (NAVİQASİYA) ---
+# --- SIDEBAR NAVİQASİYA ---
 with st.sidebar:
-    st.markdown(f"<h2 style='color: #60a5fa;'>🇦🇿 AZ AI</h2>", unsafe_allow_html=True)
-    st.write(f"Xoş gəldin, **{st.session_state.user}**")
-    st.metric("Toplanmış XP 🏆", f"{st.session_state.xp}")
+    st.markdown("### 🇦🇿 AZ AI MENU")
+    st.write(f"Səviyyə: **{st.session_state.user}**")
+    if st.session_state.role == "admin":
+        st.markdown("<div class='admin-status'>👑 SULTAN STATUSU AKTİVDİR</div>", unsafe_allow_html=True)
+    
+    st.metric("Toplanmış XP", st.session_state.xp if 'xp' in st.session_state else 0)
     st.divider()
     
-    menu = st.radio("Bölmələr:", ["📚 Öyrənmə Mərkəzi", "🎮 Yarışma və Oyunlar", "⚙️ Parametrlər (Admin)"])
+    choice = st.selectbox("Haraya gedirik?", ["📚 Tədris Mərkəzi", "🧪 Sınaq Otağı", "🎮 Oyun & Yarışma", "⚙️ Admin Ayarları"])
     
     if st.button("🚪 Çıxış"):
         st.session_state.logged_in = False
         st.rerun()
 
-# --- 📚 ÖYRƏNMƏ MƏRKƏZİ ---
-if menu == "📚 Öyrənmə Mərkəzi":
-    st.title("📖 Akademik İş Sahəsi")
-    topic = st.text_input("Mövzu yazın (məs: Atabəylər dövləti):", "Azərbaycan mədəniyyəti")
-    
-    if st.button("Mövzunu Tədqiq Et 🧠"):
-        with st.spinner("AZ AI məlumat toplayır..."):
-            res = az_ai_brain(f"'{topic}' haqqında ən az 3000 sözlük, ensiklopedik, çox dərin məlumat yaz.")
-            st.session_state.info = res
-            st.session_state.img = f"https://loremflickr.com/1000/400/{topic.replace(' ', ',')}"
-            
-    if 'info' in st.session_state:
-        st.image(st.session_state.img, use_container_width=True)
-        st.markdown(f"<div class='main-card'>{st.session_state.info}</div>", unsafe_allow_html=True)
-        st.audio(f"https://translate.google.com/translate_tts?ie=UTF-8&q={st.session_state.info[:200]}&tl=tr&client=tw-ob")
+# --- 📚 TƏDRİS MƏRKƏZİ ---
+if choice == "📚 Tədris Mərkəzi":
+    st.title("📖 Akademik Bilik Bazası")
+    topic = st.text_input("Hansı mövzunu öyrənmək istəyirsən?", "Böyük İpək Yolu")
+    if st.button("Dərsi Başlat 🚀"):
+        with st.spinner("AZ AI araşdırır..."):
+            lesson = get_az_ai(f"'{topic}' haqqında ən az 3500 sözlük, başlıqlarla və maraqlı faktlarla dolu bir külliyyat yaz.")
+            st.markdown(f"<div class='card'>{lesson}</div>", unsafe_allow_html=True)
+            st.image(f"https://loremflickr.com/800/400/{topic.replace(' ', ',')}")
 
-# --- 🎮 YARIŞMA VE OYUNLAR ---
-elif menu == "🎮 Yarışma və Oyunlar":
-    st.title("🎮 İntellektual Yarışma Meydanı")
-    game_mode = st.selectbox("Oyun növü seçin:", ["⚔️ Tarixi Duel", "🧩 Söz Labirinti", "🔥 Məntiq Yarışı"])
+# --- 🧪 SINAQ OTAĞI (NÖVBƏTİ DÜYMƏSİ İLƏ) ---
+elif choice == "🧪 Sınaq Otağı":
+    st.title("📝 Ardıcıl Test Sistemi")
     
-    if st.button("Yarışmanı Başlat 🏁"):
-        with st.spinner("AI rəqib hazırlanır..."):
-            game_setup = az_ai_brain(f"{game_mode} növündə interaktiv, çox maraqlı bir oyun başlat. İstifadəçini sınağa çək.")
-            st.session_state.current_game = game_setup
-            
-    if 'current_game' in st.session_state:
-        st.markdown(f"<div class='game-box'>{st.session_state.current_game}</div>", unsafe_allow_html=True)
-        user_reply = st.text_input("Cavabın və ya gedişin:")
-        if st.button("Göndər 📤"):
-            feedback = az_ai_brain(f"Oyun: {st.session_state.current_game}\nİstifadəçi cavabı: {user_reply}\nBunu qiymətləndir.")
-            st.info(feedback)
-            if "düzgün" in feedback.lower() or "əla" in feedback.lower():
-                st.session_state.xp += 50
+    def generate_new_question():
+        res = get_az_ai("Tarix, Riyaziyyat və ya Coğrafiyadan çətin bir test sualı hazırla. Format: SUAL: [..] A) [..] B) [..] C) [..] D) [..] DOĞRU: [..] İZAH: [..]")
+        if "DOĞRU:" in res:
+            try:
+                st.session_state.current_test = {
+                    "s": res.split("SUAL:")[1].split("A)")[0].strip(),
+                    "v": [res.split("A)")[1].split("B)")[0].strip(), res.split("B)")[1].split("C)")[0].strip(), res.split("C)")[1].split("D)")[0].strip(), res.split("D)")[1].split("DOĞRU:")[0].strip()],
+                    "c": res.split("DOĞRU:")[1].split("İZAH:")[0].strip(),
+                    "i": res.split("İZAH:")[1].strip()
+                }
+            except: pass
+
+    if st.button("Yeni Sual 🔄") or st.session_state.current_test is None:
+        generate_new_question()
+
+    if st.session_state.current_test:
+        q = st.session_state.current_test
+        st.markdown(f"<div class='card'><h4>{q['s']}</h4></div>", unsafe_allow_html=True)
+        ans = st.radio("Variant seç:", q['v'], index=None)
+        
+        c1, c2 = st.columns(2)
+        if c1.button("✅ Yoxla"):
+            if ans and ans[0] == q['c']:
+                st.success(f"Mükəmməl! {q['i']}")
                 st.balloons()
+            else: st.error(f"Səhv! Doğru cavab: {q['c']}. {q['i']}")
+        
+        if c2.button("Növbəti Sual ➡️"):
+            generate_new_question()
+            st.rerun()
 
-# --- ⚙️ PARAMETRLƏR (YALNIZ ADMIN) ---
-elif menu == "⚙️ Parametrlər (Admin)":
-    st.title("⚙️ AZ AI Sistem İdarəetməsi")
+# --- 🎮 OYUN & YARIŞMA (COĞRAFİYA VƏ BAYRAQLAR) ---
+elif choice == "🎮 Oyun & Yarışma":
+    st.title("🎲 AZ AI Yarışma Meydanı")
+    game_type = st.radio("Oyun növü:", ["🚩 Bayraqları Tanı", "🏙️ Paytaxt Dueli", "🤝 Online Yarışma (Simulyasiya)"], horizontal=True)
     
+    if game_type == "🚩 Bayraqları Tanı":
+        countries = ["Azerbaijan", "Turkey", "Germany", "Japan", "Brazil", "Norway", "Canada", "Egypt"]
+        target = random.choice(countries)
+        st.subheader("Bu hansı ölkənin bayrağıdır?")
+        st.image(f"https://flagcdn.com/w640/{target[:2].lower() if target != 'Azerbaijan' else 'az'}.png", width=300)
+        
+        options = random.sample(countries, 4)
+        if target not in options: options[0] = target
+        random.shuffle(options)
+        
+        user_choice = st.selectbox("Ölkəni seç:", options)
+        if st.button("Təsdiqlə 🎯"):
+            if user_choice == target:
+                st.success("DOĞRUDUR! +50 XP")
+            else: st.error(f"SƏHV! Bu {target} bayrağı idi.")
+
+    elif game_type == "🤝 Online Yarışma (Simulyasiya)":
+        st.warning("Canlı rəqib axtarılır...")
+        time.sleep(2)
+        st.info("Rəqib tapıldı: User_99 (Level 5)")
+        st.write("**Sual:** Dünyanın ən böyük adası hansıdır?")
+        st.text_input("Cavabın:")
+        st.button("Rəqibi Qabaqla! ⚡")
+
+# --- ⚙️ ADMIN AYARLARI (YALNIZ SAHİB ÜÇÜN) ---
+elif choice == "⚙️ Admin Ayarları":
     if st.session_state.role != "admin":
-        st.error("🚫 Bu bölməyə daxil olmaq üçün 'Sultan/Sahib' statusunuz olmalıdır!")
+        st.error("Giriş rədd edildi! Bu bölmə yalnız Sultan/Sahib üçündür.")
     else:
-        st.markdown("<div class='admin-only'>", unsafe_allow_html=True)
-        st.subheader("👑 Sahveren - İdarəetmə Paneli")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Sistem Statusu", "Online")
-        col2.metric("Aktiv API Sayı", len(active_keys))
-        col3.metric("Platforma XP", st.session_state.xp)
+        st.title("👑 Sahibin İdarəetmə Paneli")
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.subheader("📊 Sistem Statistikası")
+        st.write(f"Aktiv API: {len(active_keys)}")
+        st.write(f"İstifadəçi: {st.session_state.user}")
         
         st.divider()
-        st.write("📈 **İstifadəçi Aktivliyi Analizi**")
-        stats_data = pd.DataFrame({
-            "Bölmə": ["Öyrənmə", "Oyunlar", "Testlər", "Söhbət"],
-            "İstifadə (%)": [40, 30, 20, 10]
-        })
-        fig = px.pie(stats_data, values='İstifadə (%)', names='Bölmə', hole=.4, color_discrete_sequence=px.colors.sequential.RdBu)
-        st.plotly_chart(fig)
-        
-        st.subheader("🛠️ AZ AI Davranış Ayarları")
-        st.select_slider("AI Yaradıcılıq Səviyyəsi (Temperature):", options=["Normal", "Yüksək", "Dahi"])
-        st.checkbox("Sistem Loglarını Göstər", value=True)
+        st.write("🔧 **Sistem Parametrləri**")
+        st.toggle("AI-nın yaradıcılığını artır", value=True)
+        st.toggle("Bütün şagirdlərə bildiriş göndər")
+        if st.button("Bütün Keşləri Təmizlə"): st.success("Sistem təmizləndi!")
         st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("---")
-st.caption(f"🇦🇿 AZ AI | Yaradıcı: Sahveren | Sistem Tarixi: {datetime.now().strftime('%d.%m.%Y')}")
+st.caption("🇦🇿 AZ AI | Bütün hüquqlar Sahveren tərəfindən qorunur 2026")
