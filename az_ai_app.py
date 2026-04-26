@@ -2,126 +2,140 @@ import streamlit as st
 import pandas as pd
 import random
 import time
+from PIL import Image
 
-# --- KONFİQURASİYA ---
-st.set_page_config(page_title="AZ AI - Universal Təhsil Portalı", page_icon="🎓", layout="wide")
+# --- SƏHİFƏ AYARLARI ---
+st.set_page_config(page_title="AZ AI - Sultan Portalı", page_icon="🧠", layout="wide")
 
-# --- DİZAYN (Dark Mode & Premium Look) ---
+# --- PREMIUM DİZAYN ---
 st.markdown("""
     <style>
     .stApp { background-color: #0c0d12; color: #ffffff; }
     [data-testid="stSidebar"] { background-color: #161821 !important; border-right: 1px solid #2d2f3b; }
-    .stTabs [data-baseweb="tab-list"] { gap: 20px; background-color: transparent; }
-    .stTabs [data-baseweb="tab"] { color: #a0a5b9; background-color: #161821; border-radius: 10px; padding: 10px 20px; border: 1px solid #2d2f3b; }
-    .stTabs [aria-selected="true"] { background-color: #7c3aed !important; color: white !important; }
-    .feature-card { background-color: #161821; padding: 25px; border-radius: 15px; border: 1px solid #2d2f3b; margin: 10px 0; }
+    .stChatFloatingInputContainer { background-color: #161821 !important; }
+    .stChatMessage { background-color: #1f222d !important; border-radius: 15px; border: 1px solid #2d2f3b; margin-bottom: 10px; }
+    .feature-card { background-color: #161821; padding: 20px; border-radius: 15px; border-left: 5px solid #7c3aed; margin-bottom: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SOL MENYU ---
+# --- SESSİYA YADDAŞI (Sayt yenilənəndə itməməsi üçün) ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "score" not in st.session_state:
+    st.session_state.score = 0
+
+# --- SOL MENYU (Sidebar) ---
 with st.sidebar:
-    st.markdown('<h1 style="color:#a78bfa;">AZ AI EDU</h1>', unsafe_allow_html=True)
-    st.info("İstifadəçi: **Sultan Sahveren**")
-    
-    choice = st.radio("BÖLMƏLƏR", [
+    st.markdown('<h1 style="color:#a78bfa;">AZ AI SULTAN</h1>', unsafe_allow_html=True)
+    menu = st.radio("MENYU", [
         "🏠 Dashboard", 
-        "🤖 AI Müəllim (Ağıllı)", 
-        "📚 Fənlər və Kitabxana", 
-        "📝 Test Mərkəzi", 
-        "🎮 İntellektual Oyunlar", 
-        "📤 Fayl Mübadiləsi",
+        "🤖 REAL AI Çat", 
+        "📚 Bütün Fənlər (Kitabxana)", 
+        "📝 Canlı Testlər", 
+        "🎮 İntellektual Oyunlar (Zəngin)", 
+        "📤 Fayl Analizi (PDF/Şəkil)",
         "⚙️ Parametrlər"
     ])
-    
     st.write("---")
-    st.caption("Dil: AZ / EN / RU / TR")
-    st.progress(85, text="Aylıq Hədəf")
+    st.write(f"🏆 **Sultanın Xalı:** {st.session_state.score}")
 
 # --- 1. DASHBOARD ---
-if choice == "🏠 Dashboard":
-    st.title("Xoş gəldiniz, Sultan!")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Ümumi Fənn", "14", "+2")
-    col2.metric("Həll olunan test", "1,420", "+12%")
-    col3.metric("AI Sual-Cavab", "345", "Aktiv")
-    col4.metric("Reytinq", "#1", "Sultan")
-
-# --- 2. AI MÜƏLLİM (Real AI Məntiqi) ---
-elif choice == "🤖 AI Müəllim (Ağıllı)":
-    st.title("💬 AZ AI Universal Köməkçi")
-    st.write("İstənilən dildə soruş, sənədini analiz etdir və ya dərsi izah etdir.")
+if menu == "🏠 Dashboard":
+    st.title("Xoş gəldin, Sultan Sahveren! 👑")
+    col1, col2, col3 = st.columns(3)
+    col1.markdown('<div class="feature-card"><b>Dillər</b><br>AZ, EN, RU, TR aktivdir.</div>', unsafe_allow_html=True)
+    col2.markdown('<div class="feature-card"><b>AI Status</b><br>Beyin 100% aktivdir.</div>', unsafe_allow_html=True)
+    col3.markdown('<div class="feature-card"><b>Sistem</b><br>Bütün fənlər qoşulub.</div>', unsafe_allow_html=True)
     
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    st.subheader("Bu günün tədris planı")
+    st.table(pd.DataFrame({
+        "Fənn": ["Riyaziyyat", "AI Etikası", "İngilis Dili"],
+        "Məqsəd": ["Törəmə testi", "Prompt Engineering", "Speaking"],
+        "Status": ["⏳ Gözləyir", "✅ Hazırdır", "⏳ Gözləyir"]
+    }))
 
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# --- 2. REAL AI ÇAT ---
+elif menu == "🤖 REAL AI Çat":
+    st.title("🤖 AZ AI Canlı Müəllim")
+    st.caption("Mən sadəcə robot deyiləm, sənin təhsil köməkçiyəm. Hər şeyi soruş!")
 
-    if prompt := st.chat_input("Nəyi öyrənmək istəyirsən?"):
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+
+    if prompt := st.chat_input("Sualını bura yaz, Sahveren..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
-            st.markdown(prompt)
+            st.write(prompt)
 
         with st.chat_message("assistant"):
-            # Süni İntellekt simulyasiyası (Gələcəkdə bura API qoşacağıq)
-            response = f"Sultan Sahveren, '{prompt}' haqqında araşdırma edirəm... Hazırda dərslikləri skan edirəm. Bu mövzu sabahkı imtahanında vacib ola bilər!"
-            st.write(response)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            with st.spinner("Düşünürəm..."):
+                time.sleep(1) # Reallıq hissi üçün
+                # Bura AI məntiqi (Simulyasiya amma geniş cavablar)
+                response = f"Sultan Sahveren, '{prompt}' mövzusu haqqında geniş məlumat bazama müraciət etdim. Bu mövzu üzrə dərsliklər və PDF-lər hazırdır. Sənə bu mövzuda test hazırlayım?"
+                st.write(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
-# --- 3. FƏNLƏR VƏ KİTABXANA ---
-elif choice == "📚 Fənlər və Kitabxana":
-    st.title("📚 Bütün Fənlər")
-    tab1, tab2, tab3 = st.tabs(["Təbiət Elmləri", "Humanitar", "Dillər"])
+# --- 3. BÜTÜN FƏNLƏR ---
+elif menu == "📚 Bütün Fənlər (Kitabxana)":
+    st.title("📚 Universal Kitabxana")
+    search = st.text_input("Fənn və ya mövzu axtar (məs: Fizika)")
     
-    with tab1:
-        st.checkbox("Riyaziyyat")
-        st.checkbox("Fizika")
-        st.checkbox("Biologiya")
-    with tab2:
-        st.checkbox("Tarix")
-        st.checkbox("Coğrafiya")
-    with tab3:
-        st.selectbox("Öyrənmək istədiyiniz dil:", ["Azərbaycan", "İngilis", "Rus", "Türk", "Alman", "Fransız"])
+    cats = st.tabs(["Fənlər", "Dillər", "Lüğət"])
+    with cats[0]:
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            st.button("📐 Riyaziyyat (Bütün mövzular)")
+            st.button("⚛️ Fizika (Mexanika, Optika)")
+            st.button("🧬 Biologiya")
+        with col_f2:
+            st.button("📜 Tarix (Azərbaycan və Dünya)")
+            st.button("🌍 Coğrafiya")
+            st.button("💻 İnformatika və AI")
+    with cats[1]:
+        st.selectbox("Öyrənilən Dil:", ["English 🇺🇸", "Russian 🇷🇺", "Turkish 🇹🇷", "German 🇩🇪"])
 
-# --- 4. TEST MƏRKƏZİ ---
-elif choice == "📝 Test Mərkəzi":
-    st.title("📝 Özünü Sına")
-    fenn = st.selectbox("Fənn seç:", ["Riyaziyyat", "Məntiq", "İngilis dili"])
+# --- 4. CANLI TESTLƏR ---
+elif menu == "📝 Canlı Testlər":
+    st.title("📝 İmtahan Mərkəzi")
+    st.write("Səviyyənə uyğun testlər yaradılır...")
     
-    st.markdown('<div class="feature-card">', unsafe_allow_html=True)
-    st.write(f"**Sual:** {fenn} üzrə növbəti sual gəlir...")
-    ans = st.radio("Doğru variantı seçin:", ["A variantı", "B variantı", "C variantı", "D variantı"])
-    if st.button("Cavabı Yoxla"):
-        st.balloons()
-        st.success("Möhtəşəm! Sultan həmişə düz tapır.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    q1 = st.radio("Sual 1: Dünyada ilk Süni İntellekt proqramı hansı ildə yaradılıb?", ["1956", "1980", "2000", "1945"])
+    if st.button("Testi Bitir"):
+        if q1 == "1956":
+            st.success("DOĞRUDUR! 🎯")
+            st.session_state.score += 50
+        else:
+            st.error("YALNIŞDIR. Doğru cavab: 1956")
 
-# --- 5. İNTELLEKTUAL OYUNLAR ---
-elif choice == "🎮 İntellektual Oyunlar":
-    st.title("🎮 Beyin Gimnastikası")
-    game_type = st.selectbox("Oyun növü:", ["Sürətli Hesablama", "Söz Tapmacası", "Tarixi Faktlar"])
+# --- 5. OYUNLAR (ZƏNGİN) ---
+elif menu == "🎮 İntellektual Oyunlar (Zəngin)":
+    st.title("🎮 Beyin Məşqi Oyunları")
+    game = st.selectbox("Oyun seç:", ["Sürətli Riyaziyyat", "Söz Tapmacası", "Məntiq Labirinti"])
     
-    if game_type == "Sürətli Hesablama":
-        num1 = random.randint(50, 200)
-        num2 = random.randint(50, 200)
-        st.subheader(f"{num1} x {num2} = ?")
-        st.text_input("Nəticəni bura yaz...")
-        st.button("Təsdiqlə")
+    if game == "Sürətli Riyaziyyat":
+        n1, n2 = random.randint(100, 999), random.randint(100, 999)
+        st.subheader(f"{n1} + {n2} = ?")
+        user_ans = st.number_input("Cavabın:", step=1)
+        if st.button("Yoxla"):
+            if user_ans == n1 + n2:
+                st.balloons()
+                st.success("Möhtəşəm sürət!")
+                st.session_state.score += 20
 
-# --- 6. FAYL MÜBADİLƏSİ ---
-elif choice == "📤 Fayl Mübadiləsi":
-    st.title("📤 Fayl və PDF Mərkəzi")
-    uploaded_file = st.file_uploader("Dərslik və ya şəkil yüklə (AI analiz etsin)", type=['pdf', 'png', 'jpg', 'docx'])
-    if uploaded_file:
-        st.success(f"'{uploaded_file.name}' uğurla yükləndi. AI tərəfindən oxunur...")
+# --- 6. FAYL ANALİZİ ---
+elif menu == "📤 Fayl Analizi (PDF/Şəkil)":
+    st.title("📤 Fayl Mərkəzi")
+    st.write("PDF dərsliklərini və ya test şəkillərini bura at, AI onları oxusun.")
+    file = st.file_uploader("Fayl seçin", type=['pdf', 'png', 'jpg', 'docx'])
+    if file:
+        st.info(f"'{file.name}' yükləndi. AI hazırda sənədi təhlil edir...")
 
 # --- 7. PARAMETRLƏR ---
 elif choice == "⚙️ Parametrlər":
-    st.title("⚙️ Sistem Ayarları")
-    st.toggle("Gecə Rejimi (Aktiv)")
-    st.toggle("Səsli Cavablar")
-    if st.button("Sistemi Yenilə"):
-        with st.spinner('Yenilənir...'):
-            time.sleep(2)
-            st.success("Bütün fənlər üzrə bazalar yeniləndi!")
+    st.title("⚙️ Sultan İdarəetmə Paneli")
+    st.text_input("Admin Key:", value="Sahveren_Sultan_2026", disabled=True)
+    st.color_picker("Saytın vurğu rəngini dəyiş", "#7c3aed")
+    if st.button("Bütün Keşi Təmizlə"):
+        st.session_state.messages = []
+        st.success("Sistem sıfırlandı!")
