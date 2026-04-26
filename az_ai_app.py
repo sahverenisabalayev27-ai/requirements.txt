@@ -1,15 +1,21 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
-# 1. Google Təsdiqləmə Kodu (Mütləq ən başda və təmiz olmalıdır)
-st.set_page_config(page_title="AZ AI Portal", layout="centered")
+# 1. Google-un axtardığı o xüsusi kod (HEAD hissəsi üçün)
+# Bu kod Google botunun sayta girən kimi gördüyü ilk şey olacaq
+st.markdown(
+    f'<p style="display:none;"><meta name="google-site-verification" content="fTstY8SCtoJrmRvDDFjCZOUpBBJnDrdVNYSwSwcL0JY" /></p>',
+    unsafe_allow_html=True
+)
 
-# Bu hissə Google-un axtardığı koddur
-st.markdown('<meta name="google-site-verification" content="fTstY8SCtoJrmRvDDFjCZOUpBBJnDrdVNYSwSwcL0JY" />', unsafe_allow_html=True)
+# 2. Saytın vizual quruluşu
+st.set_page_config(page_title="AZ AI Portal", page_icon="🤖")
 
-# 2. Saytın Brauzerdə Görünən Hissəsi
 st.title("🤖 AZ AI Rəsmi Portalı")
-st.success("✅ Sayt Google təsdiqi üçün tam hazırdır!")
-st.info("Sahveren, bu mətni görürsənsə, deməli saytın işləyir. İndi Google-da 'Təsdiqlə' düyməsinə bas.")
+st.divider()
+
+st.success("✅ Sayt Google Axtarış Konsolu üçün optimizasiya olundu.")
+st.info("Sahveren, indi Google Search Console-a qayıt və **HTML Etiketi** (fayl yox, etiket) üsulu ilə 'Təsdiqlə' düyməsinə bas.")
 
 st.write("---")
-st.write("Axtarış sistemlərinə qoşulduqdan sonra bütün funksiyalar bərpa olunacaq.")
+st.write("Mülkiyyət təsdiqləndikdən sonra bütün o mükəmməl funksiyaları (oyunlar, təhsil sistemi) buraya əlavə edəcəyik.")
