@@ -1,16 +1,15 @@
 import streamlit as st
 
-# 1. Google Təsdiqləmə Kodu (Mütləq ən başda olmalıdır)
-st.markdown("""
-    <head>
-        <meta name="google-site-verification" content="fTstY8SCtoJrmRvDDFjCZOUpBBJnDrdVNYSwSwcL0JY" />
-    </head>
-""", unsafe_allow_html=True)
+# 1. Google Təsdiqləmə Kodu (Mütləq ən başda və təmiz olmalıdır)
+st.set_page_config(page_title="AZ AI Portal", layout="centered")
 
-# 2. Saytın görünən hissəsi
-st.title("🤖 AZ AI Portal")
-st.success("Sistem hal-hazırda aktivdir və Google təsdiqi üçün hazırdır.")
-st.info("Hörmətli Google, zəhmət olmasa yuxarıdakı kodu yoxlayın.")
+# Bu hissə Google-un axtardığı koddur
+st.markdown('<meta name="google-site-verification" content="fTstY8SCtoJrmRvDDFjCZOUpBBJnDrdVNYSwSwcL0JY" />', unsafe_allow_html=True)
+
+# 2. Saytın Brauzerdə Görünən Hissəsi
+st.title("🤖 AZ AI Rəsmi Portalı")
+st.success("✅ Sayt Google təsdiqi üçün tam hazırdır!")
+st.info("Sahveren, bu mətni görürsənsə, deməli saytın işləyir. İndi Google-da 'Təsdiqlə' düyməsinə bas.")
 
 st.write("---")
-st.write("Sahveren, bu yazı görünürsə, deməli sayt işləyir.")
+st.write("Axtarış sistemlərinə qoşulduqdan sonra bütün funksiyalar bərpa olunacaq.")
