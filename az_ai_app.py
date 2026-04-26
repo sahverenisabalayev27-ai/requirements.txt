@@ -1,97 +1,129 @@
 import streamlit as st
 import time
+import random
 
-# --- SAYTIN KONFİQURASİYASI ---
-st.set_page_config(page_title="Sultan Media AI", page_icon="🚀", layout="wide")
+# --- KONFİQURASİYA ---
+st.set_page_config(page_title="Sultan Media AI | Omni-Channel", page_icon="🌐", layout="wide")
 
-# --- CUSTOM CSS (PREMİUM GÖRÜNÜŞ) ---
+# --- CUSTOM CSS (ULTRA MODERN) ---
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; }
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    
+    .stApp { background: #05070a; color: white; }
+    .main-header {
+        font-family: 'Orbitron', sans-serif;
+        background: -webkit-linear-gradient(#eee, #333);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 50px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .platform-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: 0.3s;
+        text-align: center;
+    }
+    .platform-card:hover {
+        background: rgba(124, 58, 237, 0.1);
+        border-color: #7c3aed;
+        transform: scale(1.02);
+    }
     .stButton>button {
         width: 100%;
-        border-radius: 20px;
-        height: 3em;
-        background-color: #7c3aed;
+        border-radius: 30px;
+        background: linear-gradient(90deg, #7c3aed 0%, #f472b6 100%);
         color: white;
         border: none;
-        transition: 0.3s;
+        padding: 15px;
+        font-weight: bold;
     }
-    .stButton>button:hover { background-color: #6d28d9; border: 1px solid white; }
-    .biznes-card {
-        background-color: #161b22;
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #30363d;
-        margin-bottom: 10px;
-    }
-    h1, h2, h3 { color: #a78bfa !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR (NAVİQASİYA) ---
+# --- SIDEBAR ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/6165/6165577.png", width=100)
-    st.title("Sultan Media AI")
-    st.markdown("---")
-    choice = st.radio("Xidmətlər", ["📊 Dashboard", "✍️ AI Copywriter", "💰 Satış Artırımı", "📞 Dəstək"])
-    st.markdown("---")
-    st.info("Sultan Sahveren tərəfindən idarə olunur.")
+    st.markdown("<h1 style='text-align: center;'>SULTAN AI</h1>", unsafe_allow_html=True)
+    st.write("---")
+    menu = st.selectbox("🎯 PLATFORMA SEÇİN", [
+        "🏠 Ana Səhifə",
+        "📸 Instagram & TikTok",
+        "🎥 YouTube (Shorts & Long)",
+        "💼 LinkedIn & Facebook",
+        "✈️ Telegram Kanal İdarəçisi",
+        "💎 Sultan Premium"
+    ])
+    st.write("---")
+    st.success("Sistem: 100% Aktiv")
 
-# --- DASHBOARD ---
-if choice == "📊 Dashboard":
-    st.markdown("<h1 style='text-align: center;'>Xoş Gəldiniz, Sahveren! 🦾</h1>", unsafe_allow_html=True)
-    st.write("<p style='text-align: center;'>Biznesinizi AI ilə idarə etmək üçün mərkəzi panel.</p>", unsafe_allow_html=True)
+# --- ANA SƏHİFƏ ---
+if menu == "🏠 Ana Səhifə":
+    st.markdown('<p class="main-header">SULTAN MEDIA AI</p>', unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>Bütün Sosial Media Platformalarını Tək Mərkəzdən İdarə Edin</h3>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    st.write("##")
+    col1, col2, col3, col4 = st.columns(4)
+    
     with col1:
-        st.markdown('<div class="biznes-card"><h3>📈 Reytinq</h3><p>Aktiv istifadəçi: 0</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="platform-card"><h1>📱</h1><h4>Instagram</h4><p>Reels və Postlar</p></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="biznes-card"><h3>💰 Qazanc</h3><p>Cəmi gəlir: 0 AZN</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="platform-card"><h1>🎬</h1><h4>TikTok</h4><p>Viral Trendlər</p></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="biznes-card"><h3>🤖 Status</h3><p>AI Model: Aktiv</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="platform-card"><h1>📺</h1><h4>YouTube</h4><p>SEO və Skriptlər</p></div>', unsafe_allow_html=True)
+    with col4:
+        st.markdown('<div class="platform-card"><h1>💼</h1><h4>Business</h4><p>Facebook & Ads</p></div>', unsafe_allow_html=True)
 
-    st.markdown("### 🛠️ Tez-tez istifadə olunanlar")
-    if st.button("Yeni Kampaniya Başlat"):
-        st.toast("Tezliklə aktiv olacaq!")
-
-# --- AI COPYWRITER ---
-elif choice == "✍️ AI Copywriter":
-    st.title("✍️ AI Sosial Media Asistanı")
-    st.write("Məhsul haqqında məlumat yazın, AI sizin üçün mükəmməl reklam mətni hazırlasın.")
+# --- INSTAGRAM & TIKTOK ---
+elif menu == "📸 Instagram & TikTok":
+    st.title("📸 Qısa Video (Reels/TikTok) Generatoru")
+    topic = st.text_input("Videonun mövzusu:")
+    duration = st.slider("Video müddəti (saniyə):", 15, 60, 30)
     
-    product_name = st.text_input("Məhsul və ya Xidmət adı:")
-    features = st.text_area("Əsas özəlliklər (Məsələn: Pulsuz çatdırılma, 24/7 dəstək):")
+    if st.button("Viral Ssenari Yarat"):
+        with st.spinner("Alqoritm analiz edilir..."):
+            time.sleep(2)
+            st.subheader("🔥 Sizin Viral Planınız:")
+            st.info(f"**Hook:** '{topic}' haqqında bunu bilsəniz şok olarsınız!")
+            st.write("**Görüntü:** Sürətli keçidlər, alt yazı mərkəzdə.")
+            st.code(f"Hashtaglar: #sultanai #{topic.replace(' ','')} #trend #azərbaycan")
+
+# --- YOUTUBE ---
+elif menu == "🎥 YouTube (Shorts & Long)":
+    st.title("🎥 YouTube SEO & Content Generator")
+    video_type = st.radio("Video növü:", ["Shorts (Qısa)", "Long Form (Uzun video)"])
+    title_req = st.text_input("Mövzu başlığı yazın:")
     
-    if st.button("Mətni Hazırla"):
-        if product_name:
-            with st.spinner("AI mətni hazırlayır..."):
-                time.sleep(2)
-                st.success("Mətn hazırdır!")
-                st.code(f"🌟 {product_name.upper()} İLƏ TANIŞ OLUN! 🌟\n\n🎯 {features}\n\n✅ Keyfiyyət və Etibarın tək ünvanı.\n🚀 İndi sifariş verin, fürsəti qaçırmayın!\n\n📍 @sultan_media_ai\n#azərbaycan #biznes #ai #smm", language="markdown")
-        else:
-            st.error("Zəhmət olmasa məhsul adını qeyd edin.")
+    if st.button("YouTube Planını Hazırla"):
+        st.write("### ✅ AI Təklifləri:")
+        st.write(f"**Başlıq:** {title_req} - Heç Kimin Bilmədiyi 5 Sirr!")
+        st.write("**Açıqlama:** Bu videoda biz {title_req} mövzusunu dərindən araşdırırıq...")
+        st.warning("Yüksək Click-Through Rate (CTR) üçün parlaq rəngli thumbnail istifadə edin!")
 
-# --- SATIŞ ARTIRIMI ---
-elif choice == "💰 Satış Artırımı":
-    st.title("💰 Satış və Müştəri Psixologiyası")
-    st.markdown("""
-    Bu bölmədə AI sizə müştərilərlə necə danışmalı olduğunuzu öyrədir.
-    1. Müştəri etirazlarını analiz edir.
-    2. Qiymət təklifi strategiyası qurur.
-    3. VIP müştəri profili yaradır.
-    """)
-    st.warning("Bu bölmə yalnız 'Premium' üzvlər üçündür.")
-    if st.button("Premium Planı İndi Al (19 AZN)"):
-        st.balloons()
-        st.info("Ödəniş sistemi qoşulur...")
+# --- TELEGRAM ---
+elif menu == "✈️ Telegram Kanal İdarəçisi":
+    st.title("✈️ Telegram Kanal Avtomatlaşdırması")
+    channel_type = st.selectbox("Kanalın növü:", ["Xəbər", "Eğlence", "Biznes/Motivasiya"])
+    
+    if st.button("Həftəlik Post Planı Yarat"):
+        days = ["Bazar ertəsi", "Çərşənbə", "Cümə"]
+        for day in days:
+            st.markdown(f"""
+            **{day}:**
+            - Saat 10:00: {channel_type} haqqında maraqlı fakt.
+            - Saat 18:00: İnteraktiv sorğu (Poll).
+            """)
 
-# --- DƏSTƏK ---
-elif choice == "📞 Dəstək":
-    st.title("📞 Əlaqə və Dəstək")
-    st.write("Hər hansı bir sualınız və ya texniki probleminiz var?")
-    with st.form("contact"):
-        name = st.text_input("Adınız:")
-        msg = st.text_area("Mesajınız:")
-        if st.form_submit_button("Göndər"):
-            st.success("Mesajınız Sahverenə göndərildi!")
+# --- PREMIUM ---
+elif menu == "💎 Sultan Premium":
+    st.markdown("<h1 style='text-align: center; color: #f472b6;'>💎 SULTAN PRO MEMBERSHIP</h1>", unsafe_allow_html=True)
+    st.write("### Niyə Pro-ya keçməlisiniz?")
+    st.write("- 🚀 Bütün platformalar üçün limitsiz AI sorğuları")
+    st.write("- 📊 Rəqib analizi (Rəqibləriniz nə paylaşır?)")
+    st.write("- 📞 24/7 Sultan Dəstək Xətti")
+    
+    st.write("---")
+    st.button("İNDİ ABUNƏ OL (Cəmi 19.99 AZN)")
