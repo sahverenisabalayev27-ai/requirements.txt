@@ -1,103 +1,85 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-from PIL import Image, ImageDraw, ImageFont
+import google.generativeai as genai
+from PIL import Image
+import qrcode
+from io import BytesIO
 
-# --- SAYTIN AYARLARI ---
-st.set_page_config(page_title="Sultan Business AI", layout="wide", page_icon="💎")
+# --- KONFİQURASİYA ---
+st.set_page_config(page_title="Sultan AI - Universal Ekosistem", layout="wide")
 
-# --- CUSTOM CSS ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #0d1117; }
-    .card {
-        background: #161b22;
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #30363d;
-        margin-bottom: 20px;
-    }
-    h1, h2, h3 { color: #a78bfa !important; }
-    .stButton>button {
-        background: linear-gradient(90deg, #7c3aed, #db2777);
-        color: white; border: none; font-weight: bold;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# API Açarı Girişi (Təhlükəsizlik üçün kənarda saxla)
+# Real istifadədə bunu st.secrets-dən oxumaq məsləhətdir
+API_KEY = st.sidebar.text_input("Google AI Key daxil edin:", type="password")
 
-# --- SIDEBAR (SULTAN MENU) ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135706.png", width=80)
-    st.title("Sultan AI Hub")
-    menu = st.selectbox("Xidmət Seçin:", [
-        "🏢 Biznes Dashboard",
-        "💈 Reklam & Brendinq (Logo)",
-        "📸 Sosial Media Generatoru",
-        "🧠 Müştəri Analizi"
-    ])
+if API_KEY:
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
-# --- 1. BİZNES DASHBOARD ---
-if menu == "🏢 Biznes Dashboard":
-    st.title("🏢 Müəssisənin İdarəetmə Paneli")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Gəlir Hədəfi", "3,500 AZN")
-    col2.metric("Aktiv Müştəri", "85")
-    col3.metric("Reklam Effekti", "88%")
+# --- ANA MENYU ---
+st.sidebar.title("Sultan AI Mərkəzi")
+choice = st.sidebar.radio("Bölmə Seçin:", 
+    ["Ana Səhifə", "Vision AI (Göz)", "Biznes & QR", "İnşaat & Milli Dizayn", "Gündəlik Köməkçi"])
+
+# --- 1. ANA SƏHİFƏ ---
+if choice == "Ana Səhifə":
+    st.title("Sultan AI: Milli Super-Portal 🇦🇿")
+    st.subheader("Hər kəs üçün, hər sahədə, tək bir nöqtədən süni intellekt həlləri.")
+    st.write("Sultan Media tərəfindən 'Zəka Core' vizyonu ilə hazırlanmışdır.")
+    # Bura hazırladığın 3D loqonu əlavə edə bilərsən
+    st.info("Sol tərəfdən ehtiyacınız olan bölməni seçərək başlayın.")
+
+# --- 2. VISION AI (GÖZ) ---
+elif choice == "Vision AI (Göz)":
+    st.header("👁️ Sultan Göz: Şəkil ilə Həll")
+    st.write("Şəkil çəkin: Problemi tapaq, təmiri deyək və ya reklam mətni yazaq.")
     
-    st.write("### 📈 Satış Analitikası")
-    df = pd.DataFrame({'Həftə': ['1', '2', '3', '4'], 'Qazanc': [400, 700, 600, 950]})
-    fig = px.bar(df, x='Həftə', y='Qazanc', template="plotly_dark", color_discrete_sequence=['#7c3aed'])
-    st.plotly_chart(fig, use_container_width=True)
-
-# --- 2. REKLAM & BRENDİNQ (LOGO) ---
-elif menu == "💈 Reklam & Brendinq (Logo)":
-    st.title("💈 Biznesin Üçün Reklam Yaradıcı")
-    st.write("Məsələn: Bərbər, Kafe və ya Sürücü üçün avtomatik dizayn.")
+    img_file = st.camera_input("Şəkil çək və ya yüklə")
     
-    biz_type = st.selectbox("Sizin Biznesiniz:", ["Bərbərxana", "Restoran", "Gözəllik Salonu", "Mağaza"])
-    biz_name = st.text_input("Müəssisənin Adı:", "Sultan Style")
+    if img_file and API_KEY:
+        img = Image.open(img_file)
+        st.image(img, caption="Analiz edilir...", width=300)
+        
+        prompt = "Bu şəkli analiz et. Əgər texniki problemdirsə təmiri, məhsuldursa satış mətni və qiymətini, əgər saqqal/saçdırsa kəsim tövsiyəsini ver."
+        
+        with st.spinner("Sultan AI düşünür..."):
+            response = model.generate_content([prompt, img])
+            st.success("Analiz Nəticəsi:")
+            st.write(response.text)
+            
+            # WhatsApp düyməsi
+            wa_msg = f"Sultan AI Analizi: {response.text[:100]}..."
+            st.markdown(f"[Nəticəni WhatsApp ilə göndər](https://wa.me/?text={wa_msg})")
+
+# --- 3. BİZNES & QR ---
+elif choice == "Biznes & QR":
+    st.header("💼 Biznes Mərkəzi")
+    biz_name = st.text_input("Biznesin adı (məs: Sultan Bərbər):")
+    biz_info = st.text_area("Xidmət haqqında məlumat:")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("🖼️ Avtomatik Logo")
-        if st.button("Loqonu Hazırla"):
-            # Sadə Loqo Simulyasiyası
-            img = Image.new('RGB', (400, 200), color = (22, 27, 34))
-            d = ImageDraw.Draw(img)
-            d.rectangle([20, 20, 380, 180], outline="#7c3aed", width=5)
-            d.text((100, 80), biz_name.upper(), fill=(255, 255, 255))
-            st.image(img, caption="Sizin Yeni Loqonuz (Konsept)")
-            st.success("Dizayn AI tərəfindən hazırlandı!")
+    if st.button("QR Kod və Reklam Yarat"):
+        # QR Generator
+        qr_data = f"Biznes: {biz_name}\nXidmət: {biz_info}"
+        qr_img = qrcode.make(qr_data)
+        
+        buf = BytesIO()
+        qr_img.save(buf)
+        st.image(buf, caption=f"{biz_name} üçün QR Kod")
+        
+        # Reklam mətni
+        if API_KEY:
+            res = model.generate_content(f"{biz_name} adlı {biz_info} xidməti üçün cəlbedici Instagram reklamı yaz.")
+            st.write(res.text)
 
-    with col2:
-        st.subheader("📢 Reklam Banneri")
-        slogan = st.text_input("Şüarınız:", "Keyfiyyətin tək ünvanı!")
-        if st.button("Banner Mətni Yarat"):
-            st.info(f"📍 Məkan: {biz_name}\n✂️ Xidmət: {biz_type}\n🔥 {slogan}\n📞 Sifariş üçün: 055-XXX-XX-XX")
+# --- 4. İNŞAAT & MİLLİ DİZAYN ---
+elif choice == "İnşaat & Milli Dizayn":
+    st.header("🏗️ İnşaat və Milli Dizayn")
+    st.write("Evinizin şəklini atın, biz onu Milli ruhla (Lahıc, Xınalıq) yenidən dizayn edək.")
+    # Bura yuxarıdakı Vision AI məntiqini spesifik dizayn promptları ilə əlavə edəcəyik.
 
-# --- 3. SOSİAL MEDİA GENERATORU ---
-elif menu == "📸 Sosial Media Generatoru":
-    st.title("📸 Omni-Channel Media AI")
-    platform = st.multiselect("Platformaları seçin:", ["Instagram", "TikTok", "YouTube", "Facebook"])
-    topic = st.text_input("Postun mövzusu:", "Böyük Endirim Başladı!")
-    
-    if st.button("Postları və Hashtagları Yarat"):
-        st.divider()
-        for p in platform:
-            st.subheader(f"✅ {p} üçün təklif:")
-            if p == "Instagram":
-                st.write(f"📸 **Post:** {topic}. Şəkil: Parlaq və yüksək keyfiyyətli. #azərbaycan #biznes #baku")
-            elif p == "TikTok":
-                st.write(f"🎥 **Video:** {topic} ssenarisi: 5 saniyəlik 'Hook' ilə başlayın. #trend #viral")
-            elif p == "YouTube":
-                st.write(f"📺 **Shorts:** SEO Başlıq: {topic} (Sirlər açıqlanır!)")
-
-# --- 4. MÜŞTƏRİ ANALİZİ ---
-elif menu == "🧠 Müştəri Analizi":
-    st.title("🧠 Satış Psixologiyası Modulu")
-    msg = st.text_area("Müştərinin mesajını bura qoyun:")
-    if st.button("Mesajı Analiz Et"):
-        if "qiymət" in msg.lower():
-            st.error("⚠️ Müştəri qiymətdən narazıdır. Ona hədiyyə və ya xidmət müddətini vurğulayın.")
-        else:
-            st.success("✅ Müştəri maraqlıdır. Ona dərhal rezervasiya təklif edin!")
+# --- 5. GÜNDƏLİK KÖMƏKÇİ ---
+elif choice == "Gündəlik Köməkçi":
+    st.header("🏠 Sultan Life")
+    user_q = st.text_input("Nə baş verib? (Məs: Paltarda yağ ləkəsi var...)")
+    if user_q and API_KEY:
+        res = model.generate_content(f"Gündəlik həyat köməkçisi kimi cavab ver: {user_q}")
+        st.write(res.text)
