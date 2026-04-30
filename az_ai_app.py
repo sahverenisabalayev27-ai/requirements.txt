@@ -3,64 +3,69 @@ import google.generativeai as genai
 import qrcode
 from io import BytesIO
 
-# --- SULTAN AI: YENİLƏNMİŞ MASTER KOD ---
+# --- SULTAN AI: AVTOMATİK MODEL SEÇİCİ ---
 st.set_page_config(page_title="Sultan AI", page_icon="💎", layout="wide", initial_sidebar_state="expanded")
 
-# Sənin yeni API açarın bura yerləşdirildi
 API_KEY = "AIzaSyD0_EWzOr1ZAQj3JXkdsJCfVQbom_n6Qm0"
 
-# Stil tənzimləmələri
-st.markdown("""
-    <style>
-    .stApp { background-color: #0e1117; color: white; }
-    .stButton>button { 
-        background: linear-gradient(45deg, #FF4B4B, #822727); 
-        color: white; border-radius: 12px; border: none; font-weight: bold; width: 100%; height: 3em;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# Stil
+st.markdown("""<style> .stApp { background-color: #0e1117; color: white; } </style>""", unsafe_allow_html=True)
 
-try:
-    # Google AI aktivasiyası
-    genai.configure(api_key=API_KEY.strip())
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
-    st.sidebar.title("💎 SULTAN AI")
-    st.sidebar.success("Sistem Aktivdir")
-    
-    menu = st.sidebar.selectbox("Bölməni Seçin:", ["🏠 Ana Səhifə", "📢 Reklam Yazarı", "🛠️ Texniki Usta", "💼 QR Generator"])
+@st.cache_resource
+def get_sultan_model():
+    try:
+        genai.configure(api_key=API_KEY.strip())
+        # Açara icazə verilən bütün modelləri çəkirik
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        if models:
+            # Əgər Flash varsa onu, yoxdursa siyahıdakı birinci (adətən Pro) modeli seç
+            best_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+            return genai.GenerativeModel(best_model), best_model
+    except Exception as e:
+        return None, str(e)
+    return None, "Heç bir model tapılmadı."
 
-    if menu == "🏠 Ana Səhifə":
-        st.title("Sultan AI: Milli Portal 🇦🇿")
-        st.info("Zəka Təsvirləri vizyonu ilə hazırlanmış universal süni zəka sistemi.")
-        st.image("https://images.unsplash.com/photo-1677442136019-21780ecad995", caption="Gələcəyi Sultan AI ilə qurun")
+model, model_name = get_sultan_model()
 
-    elif menu == "📢 Reklam Yazarı":
+st.sidebar.title("💎 SULTAN AI")
+if model:
+    st.sidebar.success(f"✅ Aktiv: {model_name.split('/')[-1]}")
+else:
+    st.sidebar.error("❌ Model Tapılmadı")
+
+menu = st.sidebar.selectbox("Bölməni Seçin:", ["📢 Reklam Yazarı", "🛠️ Texniki Usta", "💼 QR Generator"])
+
+if model:
+    if menu == "📢 Reklam Yazarı":
         st.header("📢 Reklam Mərkəzi")
-        prod = st.text_input("Məhsul və ya xidmət adı:")
+        prod = st.text_input("Məhsul adı:")
         if st.button("Reklamı Hazırla"):
-            with st.spinner("AI reklam yazır..."):
-                res = model.generate_content(f"{prod} üçün cəlbedici reklam mətni yaz.")
-                st.success("Nəticə:")
-                st.write(res.text)
+            try:
+                with st.spinner("Hazırlanır..."):
+                    res = model.generate_content(f"{prod} üçün maraqlı reklam yaz.")
+                    st.success(res.text)
+            except Exception as e:
+                st.error(f"Bağlantı xətası: {e}")
 
     elif menu == "🛠️ Texniki Usta":
         st.header("🛠️ Texniki Usta")
-        prob = st.text_area("Problemi təsvir edin:")
+        prob = st.text_area("Problemi yazın:")
         if st.button("Həll Yolunu Tap"):
-            with st.spinner("Usta düşünür..."):
-                res = model.generate_content(f"Peşəkar usta kimi bu problemi həll et: {prob}")
-                st.info(res.text)
+            try:
+                res = model.generate_content(f"Usta kimi cavab ver: {prob}")
+                st.write(res.text)
+            except Exception as e:
+                st.error(f"Xəta: {e}")
 
     elif menu == "💼 QR Generator":
         st.header("💼 QR Kod")
-        link = st.text_input("Link daxil edin:")
+        link = st.text_input("Link:")
         if st.button("QR Yarat"):
-            qr_img = qrcode.make(link)
+            qr = qrcode.make(link)
             buf = BytesIO()
-            qr_img.save(buf)
-            st.image(buf, caption="Sizin QR Kodunuz")
-
-except Exception as e:
-    st.error(f"Sistem xətası: {e}")
-    st.info("Zəhmət olmasa, tətbiqi 'Reboot' edin və ya yeni açarı yoxlayın.")
+            qr.save(buf)
+            st.image(buf)
+else:
+    st.error(f"Sistem xətası: {model_name}")
+    st.info("Zəhmət olmasa, 5 dəqiqə gözləyin, Google yeni açarı sistemdə aktivləşdirir.")
