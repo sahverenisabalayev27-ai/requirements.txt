@@ -3,60 +3,55 @@ import google.generativeai as genai
 import qrcode
 from io import BytesIO
 
-# --- SULTAN AI: REGION-SHIELD VERSİYA ---
-st.set_page_config(page_title="Sultan AI", page_icon="💎", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Sultan AI", page_icon="💎", layout="wide")
 
 API_KEY = "AIzaSyCd0w-fJTdofu0WO2de0Xf0N_SzCdGT6CI"
 
-# CSS - Dizaynı stabil saxlayırıq
+# CSS
 st.markdown("""<style> .stApp { background-color: #0e1117; color: white; } </style>""", unsafe_allow_html=True)
 
-# Modelləri yoxlayan və ən uyğununu seçən funksiya
-def init_model():
+@st.cache_resource
+def get_best_model():
     try:
         genai.configure(api_key=API_KEY)
-        # Ən bəsit və ən çox icazə verilən modeli seçirik
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        return model
-    except:
-        return None
+        # Sistemdə olan bütün modelləri siyahıya alırıq
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        if models:
+            # Ən yeni modeli seçməyə çalışırıq
+            for target in ['models/gemini-1.5-flash', 'models/gemini-pro', 'models/gemini-1.0-pro']:
+                if target in models:
+                    return genai.GenerativeModel(target)
+            return genai.GenerativeModel(models[0])
+    except Exception as e:
+        return str(e)
+    return None
 
-model = init_model()
+model_engine = get_best_model()
 
-st.sidebar.title("💎 SULTAN AI")
-menu = st.sidebar.selectbox("Bölməni Seçin:", ["📢 Reklam Yazarı", "🛠️ Texniki Usta", "💼 QR Generator"])
+st.title("💎 Sultan AI: Rəqəmsal Portal")
 
-if menu == "📢 Reklam Yazarı":
-    st.header("📢 Reklam Mərkəzi")
-    prod = st.text_input("Məhsul adı:")
-    if st.button("Mətni Hazırla"):
-        if model:
+if isinstance(model_engine, str):
+    st.error(f"Sistem xətası: {model_engine}")
+elif model_engine is None:
+    st.warning("Google modelləri ilə əlaqə qurula bilmir. Bir az gözləyin...")
+else:
+    menu = st.sidebar.selectbox("Bölməni Seçin:", ["📢 Reklam Yazarı", "🛠️ Texniki Usta", "💼 QR Generator"])
+    
+    if menu == "📢 Reklam Yazarı":
+        prod = st.text_input("Məhsul adı:")
+        if st.button("Mətni Hazırla"):
             try:
-                # Sorğunu ən bəsit formada göndəririk (Region blokuna düşməmək üçün)
-                response = model.generate_content(f"Yaz: {prod} haqqında maraqlı reklam.")
-                st.success(response.text)
+                # Ən bəsit sorğu
+                res = model_engine.generate_content(f"Write a short ad for: {prod}")
+                st.success(res.text)
             except Exception as e:
-                if "PermissionDenied" in str(e):
-                    st.error("Xəta: Google bu açar üçün region məhdudiyyəti qoyub.")
-                    st.info("Məsləhət: Google AI Studio-da yeni açar yaradanda 'Pay-as-you-go' deyil, 'Free' planını seçin.")
-                else:
-                    st.error(f"Xəta baş verdi: {e}")
+                st.error(f"Bağlantı kəsildi: {e}")
 
-elif menu == "🛠️ Texniki Usta":
-    st.header("🛠️ Texniki Usta")
-    prob = st.text_area("Problemi yazın:")
-    if st.button("Həllini Tap"):
-        try:
-            res = model.generate_content(f"Usta kimi cavab ver: {prob}")
-            st.write(res.text)
-        except:
-            st.error("Bağlantı kəsildi.")
-
-elif menu == "💼 QR Generator":
-    st.header("💼 QR Kod")
-    link = st.text_input("Link:")
-    if st.button("Yarat"):
-        qr = qrcode.make(link)
-        buf = BytesIO()
-        qr.save(buf)
-        st.image(buf)
+    elif menu == "🛠️ Texniki Usta":
+        prob = st.text_area("Problemi yazın:")
+        if st.button("Həllini Tap"):
+            try:
+                res = model_engine.generate_content(f"Usta məsləhəti: {prob}")
+                st.write(res.text)
+            except Exception as e:
+                st.error(f"Xəta: {e}")
