@@ -3,10 +3,9 @@ import google.generativeai as genai
 import qrcode
 from io import BytesIO
 
-# --- SULTAN AI: MASTER KOD (STABİL VERSİYA) ---
+# --- SULTAN AI: MASTER KOD (SMART MODEL SELECTION) ---
 st.set_page_config(page_title="Sultan AI", page_icon="💎", layout="centered")
 
-# CSS - Səliqəli dizayn
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: white; }
@@ -17,54 +16,68 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Sənin yeni API açarın birbaşa kodun daxilindədir
+# Sənin yeni API açarın
 API_KEY = "AIzaSyC7wDpM8DYAFzgGmMyoQxrmaC_Zk0KSOC8"
 
-try:
-    # Google AI konfiqurasiyası
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
+model = None
+
+if API_KEY:
+    try:
+        genai.configure(api_key=API_KEY)
+        
+        # Yoxlanılacaq model adları siyahısı
+        possible_models = ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-pro', 'models/gemini-pro']
+        
+        # İlk işləyən modeli tapana qədər dövr edirik
+        for model_name in possible_models:
+            try:
+                temp_model = genai.GenerativeModel(model_name)
+                # Kiçik bir test sorğusu edirik
+                temp_model.generate_content("hi", generation_config={"max_output_tokens": 1})
+                model = temp_model
+                break # İşləyən model tapıldısa, dövrdən çıxırıq
+            except:
+                continue
+        
+        if model is None:
+            st.error("Xəta: Hazırda bu API Key üçün heç bir model (Flash və ya Pro) əlçatan deyil. Lütfən 10 dəqiqə sonra yenidən yoxlayın.")
+
+    except Exception as e:
+        st.error(f"Bağlantı xətası: {e}")
+
+if model:
     st.title("💎 Sultan AI: Rəqəmsal İmperiya")
     st.markdown("---")
 
-    # Əsas Menyu
     menu = st.selectbox("Bir xidmət seçin:", ["📢 Reklam Yazarı", "🛠️ Texniki Usta", "🖼️ Zəka Dizayn (Prompt)", "💼 QR Generator"])
 
     if menu == "📢 Reklam Yazarı":
         st.subheader("Reklam Mətni Hazırla")
-        prod = st.text_input("Məhsul və ya xidmət adı:")
+        prod = st.text_input("Məhsul və ya xidmət adı (Məsələn: Quba Turu):")
         if st.button("Reklamı Yarat"):
             with st.spinner("Sultan AI düşünür..."):
-                res = model.generate_content(f"{prod} üçün cəlbedici Instagram reklam mətni və hashtaglar yaz.")
+                res = model.generate_content(f"{prod} üçün maraqlı reklam mətni yaz.")
                 st.success("Hazırdır:")
                 st.write(res.text)
 
     elif menu == "🛠️ Texniki Usta":
         st.subheader("Texniki Usta Dəstəyi")
-        prob = st.text_area("Problemi təsvir edin (məs: kombi işləmir):")
+        prob = st.text_area("Problemi yazın:")
         if st.button("Həll Yolunu Tap"):
             with st.spinner("Usta analiz edir..."):
-                res = model.generate_content(f"Peşəkar usta kimi bu problemi addım-addım həll et: {prob}")
+                res = model.generate_content(f"Peşəkar usta kimi həll yaz: {prob}")
                 st.info(res.text)
 
     elif menu == "🖼️ Zəka Dizayn (Prompt)":
-        st.subheader("AI Şəkil üçün Professional Prompt")
-        idea = st.text_input("Şəkil ideyanız nədir?")
+        idea = st.text_input("Şəkil ideyanız:")
         if st.button("Promptu Hazırla"):
-            with st.spinner("Dizayn təlimatı hazırlanır..."):
-                res = model.generate_content(f"'{idea}' üçün 3D hiper-realistik, cinematic və detallı AI image promptu yaz.")
-                st.code(res.text)
+            res = model.generate_content(f"'{idea}' üçün 3D render promptu yaz.")
+            st.code(res.text)
 
     elif menu == "💼 QR Generator":
-        st.subheader("Sürətli QR Kod")
-        link = st.text_input("Link və ya mətn daxil edin:")
+        link = st.text_input("Link daxil edin:")
         if st.button("QR Kod Yaradın"):
             qr_img = qrcode.make(link)
             buf = BytesIO()
             qr_img.save(buf)
-            st.image(buf, caption="Sizin QR Kodunuz")
-
-except Exception as e:
-    st.error(f"Sistemdə kiçik bir problem yarandı: {e}")
-    st.info("Zəhmət olmasa, tətbiqi 'Reboot' edin.")
+            st.image(buf)
