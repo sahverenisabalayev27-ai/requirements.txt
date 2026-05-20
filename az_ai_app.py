@@ -24,7 +24,8 @@ st.markdown("""
 
 try:
     genai.configure(api_key=API_KEY.strip())
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Ən çox dəstəklənən və stabil model adına keçid etdik
+    model = genai.GenerativeModel('gemini-pro')
     
     st.sidebar.title("🏛️ SULTAN MEMARLIQ")
     st.sidebar.success("AI Memarlıq Modulu Aktivdir")
@@ -54,7 +55,6 @@ try:
         if st.button("🏗️ Memarlıq Konsepsiyasını Yarat"):
             with st.spinner("Sultan AI memarlıq planını hesablayır..."):
                 try:
-                    # Heç bir dırnaq xətası olmasın deyə tək sətirdə birləşdirilmiş prompt
                     prompt = f"Bir memar kimi bu evi analiz et və Azərbaycanca geniş cavab ver. Üslub: {style}, Mərtəbə: {floors}, Sahə: {total_area}m2, Otaqlar: {rooms}, Həyət: {yard_features}, İstəklər: {ext_inter_desc}. Cavabda Memarlıq təhlili, Sahə bölgüsü, Ekstryer və İnteryer məsləhətləri bölmələri olsun."
                     res = model.generate_content(prompt)
                     st.success("Layihə Konsepsiyası Hazırdır!")
