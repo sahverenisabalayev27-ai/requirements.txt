@@ -6,7 +6,7 @@ from io import BytesIO
 # --- SULTAN AI: MEMARLIQ VƏ 3D VİZUALİZASİYA PLATFORMASI ---
 st.set_page_config(page_title="Sultan AI: Memar", page_icon="🏠", layout="wide", initial_sidebar_state="expanded")
 
-# Sənin yenicə aldığın API açarı bura inteqrasiya olundu
+# Sənin yeni və işlək API açarın
 API_KEY = "AIzaSyCOBiUabMs9t4K6TFfAK-4_cBH2XnbKHoA"
 
 # Professional İnşaat və Memarlıq Mövzusu (Tünd Gold və Tikinti çalarları)
@@ -22,11 +22,19 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-try:
-    # Google AI konfiqurasiyası
-    genai.configure(api_key=API_KEY.strip())
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    
+# Modellərin ilkin tənzimlənməsi funksiyası
+def init_sultan_model():
+    try:
+        genai.configure(api_key=API_KEY.strip())
+        return genai.GenerativeModel('gemini-1.5-flash')
+    except Exception as e:
+        st.error(f"Sistem qoşulma xətası: {e}")
+        return None
+
+model = init_sultan_model()
+
+# İndi isə menyu və əsas interfeys məntiqini başladırıq
+if model:
     st.sidebar.title("🏛️ SULTAN MEMARLIQ")
     st.sidebar.success("AI Memarlıq Modulu Aktivdir")
     
@@ -45,7 +53,7 @@ try:
             total_area = st.number_input("Ümumi sahə (kvadrat metr ilə):", min_value=30, max_value=1000, value=120)
             
         with col2:
-            st.subheader("🛏️ Daxili Bölgülər və Həyət")
+            st.subheader("🛏️ Daxili Bölgülər Və Həyət")
             rooms = st.text_input("Otaqların təxmini ölçüləri:", placeholder="Məs: Qonaq otağı 5x6, Yataq otağı 4x4, Mətbəx 3x4")
             yard_features = st.text_area("Həyətdə nə olacaq?:", placeholder="Məs: 4x8 metr hovuz, qazon, daş döşəməli besedka, dekorativ ağaclar")
 
@@ -54,25 +62,6 @@ try:
 
         if st.button("🏗️ Memarlıq Konsepsiyasını və 3D Təsviri Yarat"):
             with st.spinner("Sultan AI memarlıq planını hesablayır və vizual təsviri hazırlayır..."):
-                prompt = f"""
-                Bir memar və 3D vizualizator kimi aşağıdakı ev layihəsinin tam memarlıq konsepsiyasını hazırlayaraq Azərbaycanca cavab ver:
-                - Üslub: {style}
-                - Mərtəbə sayı: {floors}
-                - Ümumi sahə: {total_area} m²
-                - Otaq ölçüləri və bölgüsü: {rooms}
-                - Həyət və landşaft: {yard_features}
-                - Xarici/Daxili xüsusi istəklər: {ext_inter_desc}
-                
-                Zəhmət olmasa cavabı bu bölmələrə ayır:
-                1. Layihənin Ümumi Memarlıq Təhlili
-                2. Optimal Sahə Bölgüsü və Erqonomika (Otaqların yerləşmə ardıcıllığı məsləhətləri)
-                3. Ekstryer (Xarici Fasad və Həyət) dizayn təklifləri
-                4. İnteryer (Daxili Dizayn, material və rəng seçimi) məsləhətləri
-                """
-                res = model.generate_content(prompt)
-                st.success("Layihə Konsepsiyası Hazırdır!")
-                st.write(res.text)
-
-    elif menu == "📐 Çertyoj Analizi":
-        st.title("📐 Mətn Əsaslı Çertyoj və Plan Sxemi")
-        st.write("Daxil etdiyiniz ölçülərə əsasən otaqların divar və qapı düzülüşünü vizual mətn sxemi şəklində simulyasiya edirik.")
+                try:
+                    prompt = f"""
+                    Bir memar və 3D vizualizator kimi aşağıdakı ev layihəsinin tam memarlıq konsepsiy
