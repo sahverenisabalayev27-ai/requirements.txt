@@ -24,8 +24,8 @@ st.markdown("""
 
 try:
     genai.configure(api_key=API_KEY.strip())
-    # Ən çox dəstəklənən və stabil model adına keçid etdik
-    model = genai.GenerativeModel('gemini-pro')
+    # 2026-cı ilin standart və ən stabil modelinə keçid etdik: gemini-2.0-flash
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     st.sidebar.title("🏛️ SULTAN MEMARLIQ")
     st.sidebar.success("AI Memarlıq Modulu Aktivdir")
