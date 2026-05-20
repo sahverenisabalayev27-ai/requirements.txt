@@ -3,69 +3,76 @@ import google.generativeai as genai
 import qrcode
 from io import BytesIO
 
-# --- SULTAN AI: AVTOMATİK MODEL SEÇİCİ ---
-st.set_page_config(page_title="Sultan AI", page_icon="💎", layout="wide", initial_sidebar_state="expanded")
+# --- SULTAN AI: MEMARLIQ VƏ 3D VİZUALİZASİYA PLATFORMASI ---
+st.set_page_config(page_title="Sultan AI: Memar", page_icon="🏠", layout="wide", initial_sidebar_state="expanded")
 
-API_KEY = "AIzaSyD0_EWzOr1ZAQj3JXkdsJCfVQbom_n6Qm0"
+# Sənin yenicə aldığın API açarı bura inteqrasiya olundu
+API_KEY = "AIzaSyCOBiUabMs9t4K6TFfAK-4_cBH2XnbKHoA"
 
-# Stil
-st.markdown("""<style> .stApp { background-color: #0e1117; color: white; } </style>""", unsafe_allow_html=True)
+# Professional İnşaat və Memarlıq Mövzusu (Tünd Gold və Tikinti çalarları)
+st.markdown("""
+    <style>
+    .stApp { background-color: #0b0e14; color: #e0e6ed; }
+    .stButton>button { 
+        background: linear-gradient(45deg, #d4af37, #aa7c11); 
+        color: black; border-radius: 8px; border: none; font-weight: bold; width: 100%; height: 3.5em;
+    }
+    .stButton>button:hover { background: linear-gradient(45deg, #aa7c11, #d4af37); color: white; }
+    h1, h2, h3 { color: #d4af37 !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
-@st.cache_resource
-def get_sultan_model():
-    try:
-        genai.configure(api_key=API_KEY.strip())
-        # Açara icazə verilən bütün modelləri çəkirik
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+try:
+    # Google AI konfiqurasiyası
+    genai.configure(api_key=API_KEY.strip())
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    st.sidebar.title("🏛️ SULTAN MEMARLIQ")
+    st.sidebar.success("AI Memarlıq Modulu Aktivdir")
+    
+    menu = st.sidebar.selectbox("Layihə Alətləri:", ["📋 Yeni Ev Layihəsi", "📐 Çertyoj Analizi", "🎨 3D Render Prompt Generator"])
+
+    if menu == "📋 Yeni Ev Layihəsi":
+        st.title("🏠 Süni Zəka ilə Ev İnşası və Planlaşdırılması")
+        st.write("Evinizin xəyalınızdakı parametrlərini daxil edin, AI sizin üçün ilkin memarlıq konsepsiyasını qursun.")
         
-        if models:
-            # Əgər Flash varsa onu, yoxdursa siyahıdakı birinci (adətən Pro) modeli seç
-            best_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
-            return genai.GenerativeModel(best_model), best_model
-    except Exception as e:
-        return None, str(e)
-    return None, "Heç bir model tapılmadı."
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🧱 Əsas Parametrlər")
+            style = st.selectbox("Memarlıq Üslubu:", ["Modern / Minimalist", "Klassik", "Xay-Tek (High-Tech)", "Ənənəvi Azərbaycan Memarlığı (Lahıc/Xınalıq daş üslubu)", "Kənd evi / Loft"])
+            floors = st.slider("Mərtəbə sayı:", 1, 3, 1)
+            total_area = st.number_input("Ümumi sahə (kvadrat metr ilə):", min_value=30, max_value=1000, value=120)
+            
+        with col2:
+            st.subheader("🛏️ Daxili Bölgülər və Həyət")
+            rooms = st.text_input("Otaqların təxmini ölçüləri:", placeholder="Məs: Qonaq otağı 5x6, Yataq otağı 4x4, Mətbəx 3x4")
+            yard_features = st.text_area("Həyətdə nə olacaq?:", placeholder="Məs: 4x8 metr hovuz, qazon, daş döşəməli besedka, dekorativ ağaclar")
 
-model, model_name = get_sultan_model()
+        st.markdown("---")
+        ext_inter_desc = st.text_area("Əlavə xarici və daxili görünüş istəkləri:", placeholder="Məsələn: Evin fasadı təbii Ağlay daşı və şüşə panellərdən olsun. Daxildə epoksid döşəmə və gizli işıqlandırma istifadə edilsin.")
 
-st.sidebar.title("💎 SULTAN AI")
-if model:
-    st.sidebar.success(f"✅ Aktiv: {model_name.split('/')[-1]}")
-else:
-    st.sidebar.error("❌ Model Tapılmadı")
-
-menu = st.sidebar.selectbox("Bölməni Seçin:", ["📢 Reklam Yazarı", "🛠️ Texniki Usta", "💼 QR Generator"])
-
-if model:
-    if menu == "📢 Reklam Yazarı":
-        st.header("📢 Reklam Mərkəzi")
-        prod = st.text_input("Məhsul adı:")
-        if st.button("Reklamı Hazırla"):
-            try:
-                with st.spinner("Hazırlanır..."):
-                    res = model.generate_content(f"{prod} üçün maraqlı reklam yaz.")
-                    st.success(res.text)
-            except Exception as e:
-                st.error(f"Bağlantı xətası: {e}")
-
-    elif menu == "🛠️ Texniki Usta":
-        st.header("🛠️ Texniki Usta")
-        prob = st.text_area("Problemi yazın:")
-        if st.button("Həll Yolunu Tap"):
-            try:
-                res = model.generate_content(f"Usta kimi cavab ver: {prob}")
+        if st.button("🏗️ Memarlıq Konsepsiyasını və 3D Təsviri Yarat"):
+            with st.spinner("Sultan AI memarlıq planını hesablayır və vizual təsviri hazırlayır..."):
+                prompt = f"""
+                Bir memar və 3D vizualizator kimi aşağıdakı ev layihəsinin tam memarlıq konsepsiyasını hazırlayaraq Azərbaycanca cavab ver:
+                - Üslub: {style}
+                - Mərtəbə sayı: {floors}
+                - Ümumi sahə: {total_area} m²
+                - Otaq ölçüləri və bölgüsü: {rooms}
+                - Həyət və landşaft: {yard_features}
+                - Xarici/Daxili xüsusi istəklər: {ext_inter_desc}
+                
+                Zəhmət olmasa cavabı bu bölmələrə ayır:
+                1. Layihənin Ümumi Memarlıq Təhlili
+                2. Optimal Sahə Bölgüsü və Erqonomika (Otaqların yerləşmə ardıcıllığı məsləhətləri)
+                3. Ekstryer (Xarici Fasad və Həyət) dizayn təklifləri
+                4. İnteryer (Daxili Dizayn, material və rəng seçimi) məsləhətləri
+                """
+                res = model.generate_content(prompt)
+                st.success("Layihə Konsepsiyası Hazırdır!")
                 st.write(res.text)
-            except Exception as e:
-                st.error(f"Xəta: {e}")
 
-    elif menu == "💼 QR Generator":
-        st.header("💼 QR Kod")
-        link = st.text_input("Link:")
-        if st.button("QR Yarat"):
-            qr = qrcode.make(link)
-            buf = BytesIO()
-            qr.save(buf)
-            st.image(buf)
-else:
-    st.error(f"Sistem xətası: {model_name}")
-    st.info("Zəhmət olmasa, 5 dəqiqə gözləyin, Google yeni açarı sistemdə aktivləşdirir.")
+    elif menu == "📐 Çertyoj Analizi":
+        st.title("📐 Mətn Əsaslı Çertyoj və Plan Sxemi")
+        st.write("Daxil etdiyiniz ölçülərə əsasən otaqların divar və qapı düzülüşünü vizual mətn sxemi şəklində simulyasiya edirik.")
